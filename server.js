@@ -9,6 +9,7 @@ import { migrateStaffRole } from './migrations.js';
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const STATUS = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
 const NEXT = {pending:['confirmed','cancelled'],confirmed:['preparing','cancelled'],preparing:['shipping','cancelled'],shipping:['delivered'],delivered:[],cancelled:[]};
+const POINTS_UNIT = 10000;
 const now = () => new Date().toISOString();
 const hash = value => createHash('sha256').update(value).digest('hex');
 export function passwordHash(value) { const salt=randomBytes(16).toString('hex'); return `${salt}:${scryptSync(value,salt,64).toString('hex')}`; }
@@ -31,6 +32,11 @@ export function createApp(options={}) {
  const all=(sql,...args)=>db.prepare(sql).all(...args);
  function tx(fn) { db.exec('BEGIN IMMEDIATE'); try { const result=fn(); db.exec('COMMIT'); return result; } catch(e) { db.exec('ROLLBACK'); throw e; } }
  function audit(actor,action,target) { run('INSERT INTO audit(actor,action,target,created_at) VALUES(?,?,?,?)',actor,action,String(target),now()); }
+ // Credit previously delivered orders on upgrade. The order primary key makes
+ // this repeatable without duplicating points on subsequent server starts.
+ run(`INSERT OR IGNORE INTO loyalty_points(order_id,user_id,eligible_amount,points,created_at)
+  SELECT id,user_id,MAX(0,subtotal-discount),CAST(MAX(0,subtotal-discount)/? AS INTEGER),?
+  FROM orders WHERE status='delivered'`,POINTS_UNIT,now());
  if(!one('SELECT id FROM products LIMIT 1')) tx(()=>{
   for(const p of JSON.parse(readFileSync(join(ROOT,'seed.json'),'utf8'))) {
    const {id,name,price,colors,sizes,...metadata}=p;
@@ -44,7 +50,8 @@ export function createApp(options={}) {
   run("INSERT INTO users(email,name,password,role) VALUES(?,?,?,'admin')",mail,'Quản trị Mộc Vải',passwordHash(pass));
  }
  if(options.admin) createAdmin(options.admin.email,options.admin.password);
- const publicUser=u=>u?{id:u.id,email:u.email,name:u.name,role:u.role,phone:u.phone,address:u.address,active:!!u.active}:null;
+ const pointsBalance=id=>one('SELECT COALESCE(SUM(points),0) AS balance FROM loyalty_points WHERE user_id=?',id).balance;
+ const publicUser=u=>u?{id:u.id,email:u.email,name:u.name,role:u.role,phone:u.phone,address:u.address,active:!!u.active,loyaltyPoints:pointsBalance(u.id)}:null;
  function products(admin=false) {
   return all(`SELECT * FROM products ${admin?'':'WHERE active=1'} ORDER BY id ${admin?'DESC':'ASC'}`).map(p=>{
    const variants=all(`SELECT * FROM variants WHERE product_id=? ${admin?'':'AND active=1'} ORDER BY id`,p.id);
@@ -63,7 +70,8 @@ export function createApp(options={}) {
  function order(id) {
   const o=one('SELECT o.*,u.email AS customer_email FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=?',id);
   if(!o) fail(404,'Không tìm thấy đơn hàng.');
-  return {...o,statusLabel:STATUS[o.status],items:all('SELECT * FROM order_items WHERE order_id=?',id),history:all('SELECT status,note,created_at FROM order_history WHERE order_id=? ORDER BY id',id),payments:all('SELECT status,reference,created_at FROM payment_events WHERE order_id=? ORDER BY id',id),next:NEXT[o.status]};
+  const credit=one('SELECT points FROM loyalty_points WHERE order_id=?',id);
+  return {...o,earnedPoints:credit?.points??0,pointsAwarded:!!credit,statusLabel:STATUS[o.status],items:all('SELECT * FROM order_items WHERE order_id=?',id),history:all('SELECT status,note,created_at FROM order_history WHERE order_id=? ORDER BY id',id),payments:all('SELECT status,reference,created_at FROM payment_events WHERE order_id=? ORDER BY id',id),next:NEXT[o.status]};
  }
  const attempts=new Map();
  function limit(req) { const key=req.socket.remoteAddress, t=Date.now(); let a=attempts.get(key); if(!a||t>a.until) a={count:0,until:t+60000}; if(++a.count>20) fail(429,'Thử quá nhiều lần. Vui lòng đợi một phút.'); attempts.set(key,a); if(attempts.size>10000) for(const [k,v] of attempts) if(v.until<t) attempts.delete(k); }
@@ -140,6 +148,9 @@ export function createApp(options={}) {
     run('INSERT INTO cart_meta(owner,promo) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET promo=excluded.promo',owner,code);return send(200,cart(owner));
    }
    if(method==='GET'&&path==='/api/orders') {requireUser();return send(200,all('SELECT id FROM orders WHERE user_id=? ORDER BY created_at DESC',user.id).map(o=>order(o.id)));}
+   if(method==='GET'&&path==='/api/loyalty') {
+    requireUser();return send(200,{balance:pointsBalance(user.id),unit:POINTS_UNIT,history:all('SELECT order_id,eligible_amount,points,created_at FROM loyalty_points WHERE user_id=? ORDER BY created_at DESC,order_id',user.id)});
+   }
    if(method==='POST'&&path==='/api/orders') {
     requireUser();const key=string(b.requestKey,'Mã yêu cầu',16,100); const existing=one('SELECT id FROM orders WHERE user_id=? AND request_key=?',user.id,key);if(existing) return send(200,order(existing.id));
     const receiver=string(b.receiver,'Người nhận',2,100),p=phone(b.phone),address=string(b.address,'Địa chỉ',10,500);
@@ -220,6 +231,11 @@ export function createApp(options={}) {
   tx(()=>{
    if(one('SELECT status FROM orders WHERE id=?',o.id).status!==o.status) fail(409,'Đơn đã thay đổi. Hãy tải lại.');
    run('UPDATE orders SET status=?,carrier=?,tracking=? WHERE id=?',status,carrier,tracking,o.id);
+   if(status==='delivered') {
+    const eligible=Math.max(0,o.subtotal-o.discount),points=Math.floor(eligible/POINTS_UNIT);
+    const credit=run('INSERT OR IGNORE INTO loyalty_points(order_id,user_id,eligible_amount,points,created_at) VALUES(?,?,?,?,?)',o.id,o.user_id,eligible,points,now());
+    if(credit.changes) audit(actor,'loyalty.award',o.id);
+   }
    if(status==='cancelled') {
     for(const i of o.items) run('UPDATE variants SET stock=stock+? WHERE id=?',i.qty,i.variant_id);
     if(o.payment_status==='paid') {run("UPDATE orders SET payment_status='refund_pending' WHERE id=?",o.id);run('INSERT INTO payment_events(order_id,status,reference,actor,created_at) VALUES(?,?,?,?,?)',o.id,'refund_pending','Đơn bị hủy; cần hoàn tiền cho khách.',actor,now());}

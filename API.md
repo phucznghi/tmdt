@@ -14,6 +14,7 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 | PUT | `/api/cart` | Thay danh sách `{items:[{variant_id,qty}]}` |
 | POST | `/api/cart/promo` | `{code}`; chuỗi rỗng để bỏ mã |
 | GET | `/api/orders` | Chỉ các đơn thuộc khách đang đăng nhập, kèm chi tiết và lịch sử |
+| GET | `/api/loyalty` | Bắt buộc đăng nhập: `{balance,unit,history}` của chính tài khoản; không hỗ trợ sửa điểm |
 | POST | `/api/orders` | `{receiver,phone,address,method,requestKey,quote?}`; method `cod` / `bank_transfer` khi bật |
 | POST | `/api/orders/:id/cancel` | Khách hủy đơn mình khi `pending` |
 | POST | `/api/newsletter` | Lưu `{email}` đăng ký nhận ưu đãi; chưa gửi email |
@@ -32,3 +33,5 @@ Sản phẩm tạo/sửa gồm `name,price,originalPrice,audience,category,fabri
 Trạng thái đơn dùng `pending,confirmed,preparing,shipping,delivered,cancelled`. Trạng thái thanh toán dùng `unpaid,paid,refund_pending,refunded`. Giá, tồn kho và quyền truy cập luôn được kiểm tra ở server. Giá trị `quote` từ giỏ giúp client phát hiện giỏ hoặc tổng tiền đã thay đổi trước khi xác nhận. API danh sách hiện chưa phân trang; phù hợp phạm vi bài tập, cần bổ sung khi dữ liệu tăng.
 
 Vai trò `staff` chỉ được `GET /api/admin/orders` và `PATCH /api/admin/orders/:id/status` trong nhóm API quản trị. Mọi API sản phẩm/khách hàng/tài khoản/thanh toán ở nhóm này chỉ dành cho `admin`; gọi trực tiếp API không vượt qua được kiểm tra quyền. Đăng ký công khai luôn tạo `customer`.
+
+`POST /api/orders` bắt buộc có phiên đăng nhập còn hiệu lực. Hồ sơ trong `/api/me` có `user.loyaltyPoints`; mỗi đơn có `earnedPoints` và `pointsAwarded`. Khi chuyển đơn sang `delivered`, server ghi điểm trong cùng transaction với trạng thái: `floor(max(0,subtotal-discount)/10000)`. Bảng `loyalty_points` dùng `order_id` làm khóa chính để chặn cộng trùng; khách không thể chỉ định người nhận điểm hoặc số điểm. `/api/loyalty` bỏ qua mọi tham số chọn user và luôn lọc theo phiên hiện tại.

@@ -52,3 +52,9 @@ CREATE TABLE IF NOT EXISTS audit (
 );
 CREATE INDEX IF NOT EXISTS orders_customer ON orders(user_id,created_at);
 CREATE INDEX IF NOT EXISTS history_order ON order_history(order_id,id);
+CREATE TABLE IF NOT EXISTS loyalty_points (
+ order_id TEXT PRIMARY KEY REFERENCES orders(id), user_id INTEGER NOT NULL REFERENCES users(id),
+ eligible_amount INTEGER NOT NULL CHECK(eligible_amount>=0), points INTEGER NOT NULL CHECK(points>=0),
+ created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS loyalty_customer ON loyalty_points(user_id,created_at);

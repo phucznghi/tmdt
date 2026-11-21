@@ -23,6 +23,7 @@ async function fixture(t,options={}){
 }
 const checkout=(requestKey='request-checkout-0001',method='cod')=>({receiver:'Nguyễn Văn An',phone:'0901234567',address:'128 Nguyễn Trãi, TP Hồ Chí Minh',method,requestKey});
 async function add(c,variant_id,qty=1){return c.call('/cart','PUT',{items:[{variant_id,qty}]});}
+async function deliver(admin,id){for(const status of ['confirmed','preparing','shipping','delivered'])await admin.call('/admin/orders/'+id+'/status','PATCH',{status,carrier:'GHN',tracking:'POINTS-TEST-001'});}
 
 test('register, real password auth, profile, admin permissions and CSRF',async t=>{
  const {client}=await fixture(t);const c=client();const {user}=await c.register();assert.equal(user.role,'customer');
@@ -151,4 +152,38 @@ test('legacy database migration preserves users, passwords, orders, sessions and
   app=createApp({dbPath});assert.equal(app.db.prepare('SELECT password FROM users WHERE id=7').get().password,password);assert.equal(app.db.prepare('SELECT user_id FROM orders').get().user_id,8);assert.equal(app.db.prepare('SELECT actor FROM order_history').get().actor,7);assert.equal(app.db.prepare('SELECT user_id FROM sessions').get().user_id,7);assert.equal(app.db.prepare('SELECT actor FROM audit').get().actor,7);
   app.db.prepare("UPDATE users SET role='staff' WHERE id=8").run();assert.equal(app.db.prepare('PRAGMA foreign_keys').get().foreign_keys,1);assert.deepEqual(app.db.prepare('PRAGMA foreign_key_check').all(),[]);app.close();app=createApp({dbPath});assert.equal(app.db.prepare('SELECT role FROM users WHERE id=8').get().role,'staff');assert.equal(app.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
  } finally {app?.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test('checkout requires an authenticated account, including after logout or session expiry',async t=>{
+ const {client,app}=await fixture(t);const c=client();await c.call('/me');const v=(await c.call('/products'))[0].variants[0];await add(c,v.id);
+ await c.call('/orders','POST',{...checkout(),user_id:1,email:ADMIN.email},401);await c.call('/loyalty','GET',undefined,401);assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,0);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,v.stock);
+ await c.register();await c.call('/auth/logout','POST',{});await c.call('/orders','POST',checkout(),401);await c.call('/auth/login','POST',{email:'buyer@example.test',password:'Buyer-password-2026'});app.db.prepare('UPDATE sessions SET expires=0').run();assert.equal((await c.call('/me')).user,null);await c.call('/orders','POST',checkout(),401);
+});
+
+test('delivered orders award points once to their owner, after discount and excluding shipping',async t=>{
+ const {client,app}=await fixture(t);const admin=client(),c=client(),other=client();await admin.login();const {user}=await c.register();await other.register('other@example.test');const p=(await c.call('/products'))[0],v=p.variants[0];await add(c,v.id);await c.call('/cart/promo','POST',{code:'WELCOME50'});const o=await c.call('/orders','POST',checkout(),201);
+ assert.equal((await c.call('/loyalty')).balance,0);assert.equal(o.pointsAwarded,false);
+ await admin.call('/admin/orders/'+o.id+'/status','PATCH',{status:'confirmed'});assert.equal((await c.call('/loyalty')).history.length,0);
+ await admin.call('/admin/orders/'+o.id+'/status','PATCH',{status:'preparing'});await admin.call('/admin/orders/'+o.id+'/status','PATCH',{status:'shipping',carrier:'GHN',tracking:'POINTS-001'});assert.equal((await c.call('/loyalty')).balance,0);
+ const done=await admin.call('/admin/orders/'+o.id+'/status','PATCH',{status:'delivered'});const expected=Math.floor((p.price-50000)/10000);assert.equal(done.earnedPoints,expected);assert.equal(done.payment_status,'unpaid');assert.equal(done.pointsAwarded,true);const points=await c.call('/loyalty');assert.equal(points.balance,expected);assert.equal(points.history[0].eligible_amount,p.price-50000);assert.equal(points.history[0].order_id,o.id);assert.equal((await c.call('/me')).user.loyaltyPoints,expected);
+ await admin.call('/admin/orders/'+o.id+'/status','PATCH',{status:'delivered'},409);await admin.call('/admin/orders/'+o.id+'/payment','PATCH',{status:'paid',reference:'COD-POINTS-001'});await c.call('/orders','POST',checkout());assert.equal((await c.call('/loyalty')).history.length,1);assert.equal((await c.call('/loyalty')).balance,expected);
+ assert.equal((await other.call('/loyalty?user_id='+user.id)).balance,0);assert.deepEqual((await other.call('/loyalty')).history,[]);await c.call('/profile','PATCH',{name:'Khách hàng',phone:'',address:'',loyaltyPoints:999999});assert.equal((await c.call('/me')).user.loyaltyPoints,expected);assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM loyalty_points').get().n,1);
+});
+
+test('cancelled orders earn no points; each delivered order rounds down including zero-point orders',async t=>{
+ const {client,app}=await fixture(t);const admin=client(),c=client();await admin.login();await c.register();const p=(await c.call('/products'))[0],v=p.variants[0];await add(c,v.id);const cancelled=await c.call('/orders','POST',checkout('request-points-cancel-0001'),201);await c.call('/orders/'+cancelled.id+'/cancel','POST',{});assert.equal((await c.call('/loyalty')).balance,0);
+ for(const [index,price]of [9999,10000].entries()){
+  app.db.prepare('UPDATE products SET price=? WHERE id=?').run(price,p.id);await add(c,v.id);const o=await c.call('/orders','POST',checkout('request-points-boundary-'+index),201);await deliver(admin,o.id);
+ }
+ const result=await c.call('/loyalty');assert.equal(result.balance,1);assert.equal(result.history.length,2);assert.deepEqual(result.history.map(h=>h.points).sort(),[0,1]);assert.ok(!result.history.some(h=>h.order_id===cancelled.id));
+});
+
+test('upgrade backfills older delivered orders once and point history persists on reopening',async t=>{
+ const {client,app,dir}=await fixture(t);const c=client();const {user}=await c.register();const v=(await c.call('/products'))[0].variants[0];await add(c,v.id);const o=await c.call('/orders','POST',checkout(),201);
+ // Mimic an older database which predates the loyalty ledger.
+ app.db.prepare("UPDATE orders SET status='delivered' WHERE id=?").run(o.id);app.db.exec('DROP TABLE loyalty_points');
+ for(let i=0;i<2;i++){
+  const reopened=createApp({dbPath:join(dir,'test.sqlite')});try{assert.equal(reopened.db.prepare('SELECT COUNT(*) AS n FROM loyalty_points WHERE user_id=?').get(user.id).n,1);assert.equal(reopened.db.prepare('SELECT points FROM loyalty_points WHERE order_id=?').get(o.id).points,Math.floor(o.subtotal/10000));assert.deepEqual(reopened.db.prepare('PRAGMA foreign_key_check').all(),[]);}finally{reopened.close();}
+ }
+ assert.equal((await c.call('/loyalty')).history.length,1);
 });

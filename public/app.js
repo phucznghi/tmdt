@@ -1,4 +1,4 @@
-import {api,esc,busy} from '/shared.js';
+import {api,esc,busy,redirectForLogin} from '/shared.js';
 
         // Safe SVG Data URI Fallback Image so NO broken images ever appear
         window.FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231B4332'/%3E%3Cstop offset='100%25' stop-color='%232D6A4F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='500' fill='url(%23g)'/%3E%3Ctext x='50%25' y='48%25' dominant-baseline='middle' text-anchor='middle' fill='%23FAF9F6' font-family='sans-serif' font-weight='bold' font-size='22'%3EM%E1%BB%98C V%E1%BA%A2I%3C/text%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' fill='%23F59E0B' font-family='sans-serif' font-size='12' letter-spacing='3'%3EVERDANT%3C/text%3E%3C/svg%3E";
@@ -760,14 +760,15 @@ import {api,esc,busy} from '/shared.js';
                 acceptCart(await api('/cart/promo','POST',{code:document.getElementById('promo-code-input').value}));
                 const el=document.getElementById('promo-feedback');el.classList.remove('hidden');el.textContent='Đã cập nhật ưu đãi (đơn tối thiểu 99.000đ).';
             },e=>showToast(e.message)));
-            document.getElementById('proceed-checkout-btn').addEventListener('click',()=>{
+            document.getElementById('proceed-checkout-btn').addEventListener('click',()=>busy(document.getElementById('proceed-checkout-btn'),async()=>{
+                state.user=(await api('/me')).user;
                 if(!state.user) {location.href='/account?checkout=1';return;}
                 checkoutForm.classList.remove('hidden');
                 document.getElementById('checkout-name').value=state.user.name;
                 document.getElementById('checkout-phone').value=state.user.phone||'';
                 document.getElementById('checkout-address').value=state.user.address||'';
                 checkoutForm.scrollIntoView({behavior:'smooth'});
-            });
+            },e=>showToast(e.message)));
             let checkoutKey=sessionStorage.getItem('mv-checkout-key')||crypto.randomUUID();
             checkoutForm.addEventListener('submit',e=>{
                 e.preventDefault();busy(checkoutForm.querySelector('[type=submit]'),async()=>{
@@ -780,7 +781,7 @@ import {api,esc,busy} from '/shared.js';
                     checkoutForm.classList.add('hidden');
                     document.getElementById('order-success-code').textContent='Mã đơn hàng: #'+o.id+' · Thanh toán khi nhận hàng (COD)';
                     orderSuccessView.classList.remove('hidden');showToast('Đơn hàng đã được lưu.');
-                },async e=>{showToast(e.message);try{acceptCart(await api('/cart'));}catch{}});
+                },async e=>{if(await redirectForLogin(e,'/account?checkout=1'))return;showToast(e.message);try{acceptCart(await api('/cart'));}catch{}});
             });
             document.getElementById('newsletter-form').addEventListener('submit',e=>{
                 e.preventDefault();busy(e.target.querySelector('button'),async()=>{

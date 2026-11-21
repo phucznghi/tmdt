@@ -69,6 +69,18 @@ Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên 
 
 ## Quy tắc nghiệp vụ
 
+### Đăng nhập và tích điểm
+
+- Có thể xem sản phẩm và thêm giỏ khi chưa đăng nhập, nhưng **bắt buộc đăng nhập mới tạo được đơn hàng**. Server kiểm tra phiên, không nhận tài khoản do trình duyệt tự khai báo. Phiên hết hạn thì khách phải đăng nhập lại.
+- Đơn chuyển sang **Đã giao** được cộng điểm vào tài khoản đặt đơn, bất kể người cập nhật là admin hay nhân viên. Việc tích điểm theo trạng thái giao hàng, không chờ xác nhận thu tiền COD riêng.
+- Mức hiện tại: **1 điểm / 10.000đ tiền hàng sau giảm giá**, bỏ phần lẻ theo từng đơn, không tính phí vận chuyển. Ví dụ: tiền hàng 329.000đ, giảm 50.000đ, phí giao 30.000đ → tích **27 điểm**.
+- Chưa giao hoặc đã hủy không được tích điểm. Mỗi đơn chỉ có một bản ghi điểm; gửi lại yêu cầu hoặc khởi động lại server không cộng thêm.
+- Khách xem tổng điểm và lịch sử tại `/account`; mỗi đơn đã giao cũng hiển thị số điểm được cộng. Tài khoản chỉ xem được điểm của chính mình và không tự sửa điểm qua API.
+- Database cũ tự thêm bảng `loyalty_points`; các đơn cũ ở trạng thái đã giao được ghi điểm một lần. Không cần xóa hoặc đặt lại dữ liệu.
+- Phiên bản này chỉ tích và hiển thị điểm, chưa triển khai đổi điểm, hết hạn điểm hoặc xử lý trả hàng sau giao thành công.
+
+### Đơn hàng và thanh toán
+
 1. Đơn hàng: **Chờ xác nhận → Đã xác nhận → Đang chuẩn bị → Đang giao → Đã giao**.
 2. Khách chỉ hủy được đơn của mình ở trạng thái **Chờ xác nhận**. Admin có thể hủy trước khi giao cho đơn vị vận chuyển. Không chuyển ngược hoặc bỏ qua bước.
 3. Tồn kho được giữ ngay khi tạo đơn bằng giao dịch SQLite; khi hủy, hoàn kho đúng một lần. Biến thể không đủ hàng hoặc bị ngừng bán không thể đặt.
