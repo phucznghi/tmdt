@@ -1,13 +1,20 @@
 import {$,api,esc,money,date,statusLabels,orderHtml,busy} from '/shared.js';
 import {reportsHtml} from '/reports-view.js';
-let tab='orders',records=[],editing=null,timer,isAdmin=false,currentUserId,reportRange={};
+import {inventoryHtml} from '/inventory-view.js';
+let tab='orders',records=[],editing=null,timer,isAdmin=false,currentUserId,reportRange={},inventoryRange={},openReceiptId='',receiptRequestKey;
 const roles={customer:'Khách hàng',staff:'Nhân viên',admin:'Quản trị viên'};
-const titles={reports:['Doanh thu & tăng trưởng','Tổng hợp thu tiền, hoàn tiền và sự phát triển của cửa hàng.'],orders:['Đơn hàng & vận chuyển','Theo dõi đơn hàng, thanh toán và quá trình giao nhận.'],products:['Sản phẩm & tồn kho','Quản lý danh mục và số lượng theo từng màu, từng size.'],customers:['Khách hàng','Xem thông tin khách hàng và lịch sử mua sắm.'],users:['Tài khoản & phân quyền','Chỉ quản trị viên được cấp quyền, khóa hoặc mở khóa tài khoản.']};
+const titles={inventory:['Kho & nhập hàng','Kiểm tra tồn, lập phiếu và theo dõi tình hình nhập hàng.'],reports:['Doanh thu & tăng trưởng','Tổng hợp thu tiền, hoàn tiền và sự phát triển của cửa hàng.'],orders:['Đơn hàng & vận chuyển','Theo dõi đơn hàng, thanh toán và quá trình giao nhận.'],products:['Sản phẩm & tồn kho','Quản lý danh mục và số lượng theo từng màu, từng size.'],customers:['Khách hàng','Xem thông tin khách hàng và lịch sử mua sắm.'],users:['Tài khoản & phân quyền','Chỉ quản trị viên được cấp quyền, khóa hoặc mở khóa tài khoản.']};
 function toast(message,error=false){$('toast').textContent=message;$('toast').className=error?'error':'';clearTimeout(timer);timer=setTimeout(()=>$('toast').className='hidden',6000);}
 const error=e=>toast(e.message,true);
 const stat=(label,value)=>`<div class="stat"><small>${label}</small><strong>${value}</strong></div>`;
-async function load(){const requested=tab;const query=tab==='reports'?'?'+new URLSearchParams(reportRange):'';const result=await api('/admin/'+requested+query);if(requested!==tab)return;records=result;render();}
+async function load(){const requested=tab;const query=tab==='reports'?'?'+new URLSearchParams(reportRange):tab==='inventory'?'?'+new URLSearchParams(inventoryRange):'';const result=await api('/admin/'+requested+query);if(requested!==tab)return;records=result;render();}
 function render(){
+ if(tab==='inventory'){
+  if(!records.summary)return;
+  inventoryRange={from:records.from,to:records.to};
+  $('stats').innerHTML=stat('Tồn khả dụng',records.summary.available)+stat('Phiếu đã nhập trong kỳ',records.summary.receiptCount)+stat('Số lượng nhập trong kỳ',records.summary.receivedQuantity)+stat('Giá trị nhập trong kỳ',money(records.summary.receivedValue));
+  $('content').innerHTML=inventoryHtml(records,{query:$('search').value,filter:$('status-filter').value,openReceipt:openReceiptId});return;
+ }
  if(tab==='reports'){
   if(!records.current)return;
   reportRange={from:records.from,to:records.to};
@@ -32,12 +39,13 @@ function render(){
   $('content').innerHTML=`<div class="panel table-wrap"><table><thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Đơn hàng</th><th>Đã thanh toán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>${data.map(c=>`<tr><td><strong>${esc(c.name)}</strong><p>Tham gia ${date(c.created_at)}</p></td><td>${esc(c.email)}<p>${esc(c.phone||'Chưa có số điện thoại')}</p><p>${esc(c.address)}</p></td><td>${c.order_count}</td><td>${money(c.spent)}</td><td><span class="badge">${c.active?'Hoạt động':'Đã khóa'}</span></td><td><button class="${c.active?'danger':'secondary'} small" data-customer="${c.id}">${c.active?'Khóa':'Mở khóa'}</button></td></tr>`).join('')}</tbody></table>${!data.length?'<p class="empty">Chưa có khách hàng phù hợp.</p>':''}</div>`;
  }
 }
-function setTab(next){if(!isAdmin&&!['orders','products'].includes(next))return;tab=next;records=[];$('search').value='';$('search').placeholder=next==='products'?'Tìm tên sản phẩm, danh mục…':next==='orders'?'Tìm mã đơn, tên, email…':'Tìm tên, email…';$('search').parentElement.classList.toggle('hidden',tab==='reports');$('title').textContent=titles[tab][0];$('subtitle').textContent=titles[tab][1];document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$('new-product').classList.toggle('hidden',tab!=='products');$('status-filter').innerHTML='<option value="">Tất cả trạng thái</option>'+(tab==='orders'?Object.entries(statusLabels).map(([s,l])=>`<option value="${s}">${l}</option>`).join(''):'<option value="1">Đang hoạt động / đang bán</option><option value="0">Đã khóa / đã ẩn</option>');$('content').textContent='Đang tải…';load().catch(error);}
+function setTab(next){if(!isAdmin&&!['orders','products'].includes(next))return;tab=next;records=[];$('search').value='';$('search').placeholder=next==='inventory'?'Tìm sản phẩm, màu, size, nhà cung cấp…':next==='products'?'Tìm tên sản phẩm, danh mục…':next==='orders'?'Tìm mã đơn, tên, email…':'Tìm tên, email…';$('search').parentElement.classList.toggle('hidden',tab==='reports');$('title').textContent=titles[tab][0];$('subtitle').textContent=titles[tab][1];document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$('new-product').classList.toggle('hidden',tab!=='products');$('status-filter').innerHTML='<option value="">Tất cả trạng thái</option>'+(tab==='inventory'?'<option value="low">Sắp hết (đang bán ≤ 5)</option><option value="out">Hết hàng</option>':tab==='orders'?Object.entries(statusLabels).map(([s,l])=>`<option value="${s}">${l}</option>`).join(''):'<option value="1">Đang hoạt động / đang bán</option><option value="0">Đã khóa / đã ẩn</option>');$('content').textContent='Đang tải…';load().catch(error);}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('search').oninput=render;$('status-filter').onchange=render;$('refresh').onclick=()=>busy($('refresh'),load,error);
 $('logout').onclick=()=>busy($('logout'),async()=>{await api('/auth/logout','POST',{});location.href='/account';},error);
 $('content').addEventListener('submit',e=>{
  e.preventDefault();const f=e.target;
  if(f.id==='report-filter'){reportRange=Object.fromEntries(new FormData(f));busy(f.querySelector('button'),load,error);return;}
+ if(f.id==='inventory-filter'){inventoryRange=Object.fromEntries(new FormData(f));busy(f.querySelector('button'),load,error);return;}
  if(f.classList.contains('access-form')) {
   busy(f.querySelector('button'),async()=>{
    if(!confirm('Lưu quyền và trạng thái tài khoản này? Những phiên đăng nhập cũ sẽ bị hủy khi quyền hoặc trạng thái thay đổi.'))return;
@@ -52,11 +60,14 @@ $('content').addEventListener('submit',e=>{
  },error);
 });
 $('content').addEventListener('click',e=>{
+ if(e.target.closest('#new-receipt')){openReceiptEditor();return;}
+ const receiptButton=e.target.closest('[data-confirm-receipt],[data-cancel-receipt]');
+ if(receiptButton){busy(receiptButton,async()=>{const id=receiptButton.dataset.confirmReceipt||receiptButton.dataset.cancelReceipt;const action=receiptButton.dataset.confirmReceipt?'confirm':'cancel';await api('/admin/inventory/receipts/'+id+'/'+action,'POST',{});openReceiptId=id;await load();toast(action==='confirm'?'Đã nhập hàng và cộng kho.':'Đã hủy phiếu nháp.');},error);return;}
  const edit=e.target.closest('[data-edit]');if(edit)openEditor(records.find(p=>p.id===Number(edit.dataset.edit)));
  const c=e.target.closest('[data-customer]');if(c)busy(c,async()=>{const customer=records.find(r=>r.id===Number(c.dataset.customer));if(!confirm(`${customer.active?'Khóa':'Mở khóa'} tài khoản ${customer.email}?`))return;await api('/admin/customers/'+customer.id,'PATCH',{active:!customer.active});await load();toast('Đã cập nhật tài khoản.');},error);
 });
 function addVariant(v={}){
- const row=document.createElement('div');row.className='variant-row';row.innerHTML=`<label>Màu<input data-field="color" value="${esc(v.color||'Xanh Rừng')}" required maxlength="60"></label><label>Size<input data-field="size" value="${esc(v.size||'M')}" required maxlength="20"></label><label>Mã màu<input data-field="hex" type="color" value="${esc(v.hex||'#1b4332')}"></label><label>Ảnh HTTPS<input data-field="img" type="url" value="${esc(v.img||'')}" required></label><label>Tồn kho<input data-field="stock" type="number" min="0" max="100000" value="${v.stock??20}" required></label><button type="button" class="danger" aria-label="Xóa biến thể">×</button>`;row.querySelector('button').onclick=()=>row.remove();$('variants').append(row);
+ const row=document.createElement('div');row.className='variant-row';row.innerHTML=`<label>Màu<input data-field="color" value="${esc(v.color||'Xanh Rừng')}" required maxlength="60"></label><label>Size<input data-field="size" value="${esc(v.size||'M')}" required maxlength="20"></label><label>Mã màu<input data-field="hex" type="color" value="${esc(v.hex||'#1b4332')}"></label><label>Ảnh HTTPS<input data-field="img" type="url" value="${esc(v.img||'')}" required></label><label>Tồn kho<input data-field="stock" type="number" min="0" max="100000" value="${v.stock??0}" required></label><button type="button" class="danger" aria-label="Xóa biến thể">×</button>`;row.querySelector('button').onclick=()=>row.remove();$('variants').append(row);
 }
 function openEditor(p=null){if(p&&!isAdmin)return;editing=p;$('editor-title').textContent=p?'Chỉnh sửa sản phẩm':'Thêm sản phẩm';const f=$('product-form');f.reset();for(const name of ['name','category','audience','badge','price','originalPrice','fabric'])if(p)f.elements[name].value=p[name];f.elements.active.checked=p?p.active:true;f.elements.flashSale.checked=!!p?.flashSale;$('variants').innerHTML='';if(p)p.variants.filter(v=>v.active).forEach(addVariant);else addVariant();$('product-dialog').showModal();}
 $('new-product').onclick=()=>openEditor();$('close-editor').onclick=()=>$('product-dialog').close();$('add-variant').onclick=()=>addVariant();
@@ -64,5 +75,17 @@ $('product-form').onsubmit=e=>{e.preventDefault();const f=e.target;busy(f.queryS
  const b=Object.fromEntries(new FormData(f));for(const n of ['price','originalPrice'])b[n]=Number(b[n]);b.active=f.elements.active.checked;b.flashSale=f.elements.flashSale.checked;b.version=editing?.version;
  b.variants=[...$('variants').children].map(row=>Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.dataset.field==='stock'?Number(i.value):i.value])));
  await api('/admin/products'+(editing?'/'+editing.id:''),editing?'PUT':'POST',b);$('product-dialog').close();await load();toast('Đã lưu sản phẩm.');
+ },error);};
+function receiptTotal(){let total=0;for(const row of $('receipt-lines').children)total+=(Number(row.querySelector('[data-qty]').value)||0)*(Number(row.querySelector('[data-cost]').value)||0);$('receipt-total').textContent='Tổng giá trị nhập: '+money(total);}
+function addReceiptLine(){
+ const row=document.createElement('div');row.className='receipt-line';
+ row.innerHTML=`<label>Sản phẩm / màu / size<select data-variant required><option value="">Chọn biến thể</option>${records.stock.map(v=>`<option value="${v.id}">#${v.id} ${esc(v.name)} · ${esc(v.color)} / ${esc(v.size)} (tồn ${v.stock}${v.active&&v.product_active?'':', ngừng bán'})</option>`).join('')}</select></label><label>Số lượng<input data-qty type="number" min="1" max="100000" step="1" value="1" required></label><label>Giá nhập / sản phẩm (đ)<input data-cost type="number" min="0" max="100000000" step="1" required></label><button class="danger" type="button" aria-label="Xóa dòng hàng">Xóa</button>`;
+ row.querySelector('button').onclick=()=>{row.remove();receiptTotal();};row.addEventListener('input',receiptTotal);$('receipt-lines').append(row);receiptTotal();
+}
+function openReceiptEditor(){if(!isAdmin||tab!=='inventory'||!records.stock)return;receiptRequestKey=crypto.randomUUID();$('receipt-form').reset();$('receipt-lines').innerHTML='';addReceiptLine();$('receipt-dialog').showModal();}
+$('close-receipt').onclick=()=>$('receipt-dialog').close();$('add-receipt-line').onclick=addReceiptLine;
+$('receipt-form').onsubmit=e=>{e.preventDefault();const f=e.target;busy(f.querySelector('[type=submit]'),async()=>{
+ const body={...Object.fromEntries(new FormData(f)),requestKey:receiptRequestKey,items:[...$('receipt-lines').children].map(row=>({variant_id:Number(row.querySelector('[data-variant]').value),qty:Number(row.querySelector('[data-qty]').value),unit_cost:Number(row.querySelector('[data-cost]').value)}))};
+ const receipt=await api('/admin/inventory/receipts','POST',body);openReceiptId=receipt.id;$('receipt-dialog').close();$('search').value='';$('status-filter').value='';await load();document.querySelector(`[data-receipt-id="${receipt.id}"]`)?.scrollIntoView({behavior:'smooth',block:'start'});toast('Đã lưu phiếu nháp; chưa cộng kho.');
  },error);};
 try{const me=await api('/me');if(!['admin','staff'].includes(me.user?.role)){$('workspace').classList.add('hidden');$('access').classList.remove('hidden');$('access').innerHTML='<div class="panel"><h1>Cần tài khoản nhân viên hoặc quản trị</h1><p>Đăng nhập bằng tài khoản được cấp quyền để xử lý đơn hàng.</p><a href="/account?admin=1">Đến trang đăng nhập</a></div>';$('logout').classList.toggle('hidden',!me.user);}else{isAdmin=me.user.role==='admin';currentUserId=me.user.id;document.querySelectorAll('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',!isAdmin));$('identity').textContent=me.user.name+' · '+roles[me.user.role];setTab(isAdmin?'reports':'orders');}}catch(e){error(e);}

@@ -1,13 +1,17 @@
 const DAY=86400000;
-const localDay=value=>new Date(new Date(value).getTime()+7*3600000).toISOString().slice(0,10);
+export const localDay=value=>new Date(new Date(value).getTime()+7*3600000).toISOString().slice(0,10);
 const offset=(value,n)=>new Date(Date.parse(value+'T00:00:00Z')+n*DAY).toISOString().slice(0,10);
 function day(value,label){if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value))||new Date(value+'T00:00:00Z').toISOString().slice(0,10)!==value)throw Object.assign(new Error(label+' không hợp lệ.'),{status:400});return value;}
 const growth=(current,previous)=>previous===0?(current===0?0:null):Math.round((current-previous)/Math.abs(previous)*10000)/100;
-export function buildReport(db,query={}){
+export function reportWindow(query={}){
  const today=localDay(new Date()),to=day(query.to||today,'Ngày kết thúc'),from=day(query.from||offset(to,-29),'Ngày bắt đầu');
  const days=Math.round((Date.parse(to)-Date.parse(from))/DAY)+1;
  if(days<1||days>366)throw Object.assign(new Error('Chọn khoảng báo cáo từ 1 đến 366 ngày.'),{status:400});
  const previousFrom=offset(from,-days),previousTo=offset(from,-1);
+ return {from,to,days,previousFrom,previousTo};
+}
+export function buildReport(db,query={}){
+ const {from,to,days,previousFrom,previousTo}=reportWindow(query);
  const orders=db.prepare('SELECT id,user_id,created_at,status FROM orders').all();
  const customers=db.prepare("SELECT created_at FROM users WHERE role='customer'").all();
  const payments=db.prepare("SELECT p.status,p.created_at,o.total FROM payment_events p JOIN orders o ON o.id=p.order_id WHERE p.status IN ('paid','refunded')").all();

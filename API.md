@@ -21,6 +21,11 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 | POST | `/api/newsletter` | Lưu `{email}` đăng ký nhận ưu đãi; chưa gửi email |
 | GET/POST | `/api/admin/products` | Danh sách / tạo sản phẩm |
 | GET | `/api/admin/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` | Chỉ admin: tổng hợp, kỳ trước, tỷ lệ tăng trưởng, biểu đồ và top sản phẩm; tối đa 366 ngày |
+| GET | `/api/admin/inventory?from=YYYY-MM-DD&to=YYYY-MM-DD` | Chỉ admin: tồn hiện tại, số đang giữ, phiếu nhập, số lượng/giá trị nhận trong kỳ, nhà cung cấp và nhật ký |
+| POST | `/api/admin/inventory/receipts` | Chỉ admin: tạo phiếu nháp `{supplier,supplier_reference?,note?,requestKey,items:[{variant_id,qty,unit_cost}]}` |
+| GET | `/api/admin/inventory/receipts/:id` | Chỉ admin: chi tiết phiếu và dòng hàng chụp lại lúc lập |
+| POST | `/api/admin/inventory/receipts/:id/confirm` | Chỉ admin: xác nhận và cộng kho một lần, giao dịch toàn bộ dòng hàng |
+| POST | `/api/admin/inventory/receipts/:id/cancel` | Chỉ admin: hủy phiếu nháp, không thay đổi tồn |
 | GET | `/api/admin/orders/:id/invoice` | Admin/nhân viên: dữ liệu bill từ đơn đã lưu; trang in tại `/invoice?id=:id` |
 | PUT | `/api/admin/products/:id` | Sửa sản phẩm, phải gửi `version` lấy từ danh sách admin |
 | GET | `/api/admin/customers` | Danh sách khách và thống kê đơn |
@@ -36,6 +41,8 @@ Sản phẩm tạo/sửa gồm `name,price,originalPrice,audience,category,fabri
 Trạng thái đơn dùng `pending,confirmed,preparing,ready,shipping,delivered,cancelled`; `ready` dành cho pickup, `shipping` dành cho giao đến địa chỉ. Trạng thái thanh toán dùng `unpaid,paid,refund_pending,refunded`. Giá, tồn kho và quyền truy cập luôn được kiểm tra ở server. Giá trị `quote` từ giỏ giúp client phát hiện giỏ hoặc tổng tiền đã thay đổi trước khi xác nhận. API danh sách hiện chưa phân trang; phù hợp phạm vi bài tập, cần bổ sung khi dữ liệu tăng.
 
 Vai trò `staff` được xem đơn, cập nhật trạng thái, đọc bill, xem sản phẩm và tạo sản phẩm mới. `PUT /api/admin/products/:id`, quản lý khách hàng/tài khoản, thanh toán/hoàn tiền và báo cáo chỉ dành cho `admin`. `POST /api/orders` chỉ dành cho `customer`; admin/nhân viên không được sửa giỏ hàng để mua. Đăng ký công khai luôn tạo `customer`.
+
+Toàn bộ `/api/admin/inventory*` chỉ cho admin, kể cả đọc giá nhập. Phiếu có trạng thái `draft,received,cancelled`; không chỉnh sửa phiếu đã lập, hủy nháp và lập lại nếu cần. `qty` là số nguyên 1–100.000, giá nhập là số nguyên 0–100.000.000đ; tổng phiếu tối đa 1.000 tỷ, không nhận tổng do client khai báo. Xác nhận không được làm một biến thể vượt 100.000 tồn khả dụng. `requestKey` chống tạo trùng theo admin lập; xác nhận lại trả phiếu cũ và không cộng thêm. Phiếu/nhật ký theo thời gian Việt Nam; số liệu nhập dùng `confirmed_at`, các phiếu nháp vẫn hiện ngoài khoảng ngày. Nhật ký trả tối đa 200 dòng gần nhất trong kỳ. Không suy diễn phiếu nhập lịch sử từ tồn đầu.
 
 Đơn mới dùng `fulfillment` (`delivery` / `pickup`) và `province` (giá trị từ `config.fulfillment.provinces` trong `/api/me`). Nếu không gửi, dùng lựa chọn đã lưu trong giỏ; giao hàng thiếu tỉnh/thành sẽ bị từ chối. Nhận cửa hàng và giao TP.HCM phí 0; ngoài tỉnh 30.000đ. `shipping` do client gửi bị bỏ qua. Với pickup, server dùng địa chỉ cửa hàng, không dùng địa chỉ do client gửi. Đơn trả thêm `fulfillment,province,store_address`; pickup có bước `ready` trước `delivered`. Đổi cách nhận/province làm thay đổi quote nên phải xác nhận tổng tiền mới.
 

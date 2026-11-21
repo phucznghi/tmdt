@@ -33,6 +33,7 @@ Hệ thống có ba vai trò, kiểm tra quyền tại backend:
 | Sửa sản phẩm / tồn kho, quản lý khách hàng | Không | Không | Có |
 | Xem và in bill có tổng giá trị đơn hàng | Không | Có | Có |
 | Báo cáo doanh thu, tăng trưởng | Không | Không | Có |
+| Lập / xác nhận phiếu nhập và xem giá nhập, báo cáo nhập kho | Không | Không | Có |
 | Xác nhận nhận tiền hoặc hoàn tiền | Không | Không | Có |
 | Cấp / thu hồi quyền, khóa / mở tài khoản | Không | Không | Có |
 
@@ -47,7 +48,26 @@ Nhân viên có thể xác nhận, chuẩn bị, giao và hoàn tất đơn theo
 
 Nhân viên được tìm/xem danh sách và thêm sản phẩm mới (gồm biến thể, tồn kho ban đầu), nhưng không sửa sản phẩm hoặc tồn kho đã có. Admin/nhân viên dùng khu vực quản lý; giỏ hàng và đặt mua chỉ dành cho khách hàng, bị kiểm tra cả ở backend.
 
-## Báo cáo admin và in bill
+## Kho và nhập hàng
+
+Admin mở **Kho & nhập hàng** để xem tồn theo sản phẩm/màu/size, lọc hàng sắp hết (≤ 5) hoặc hết hàng, xem số đang giữ cho đơn và ước tính số còn tại kho.
+
+Quy trình nhập:
+
+1. Bấm **Lập phiếu nhập hàng**, nhập nhà cung cấp, số chứng từ nếu có, ghi chú và các dòng biến thể/số lượng/giá nhập.
+2. **Lưu phiếu nháp** để kiểm tra; bước này chưa tăng tồn kho.
+3. Sau khi kiểm đếm hàng thực nhận, bấm **Xác nhận đã nhận hàng & cộng kho**. Toàn bộ dòng hàng và nhật ký được ghi trong cùng giao dịch; lỗi một dòng thì không cộng dở dang các dòng còn lại.
+4. Phiếu đã nhập chỉ xem, không sửa hoặc hủy; phiếu nháp có thể hủy và lập lại nếu nhập sai. Gửi lại yêu cầu xác nhận không cộng kho lần hai.
+
+Chọn khoảng ngày để xem số phiếu đã nhập, số lượng, tổng giá trị nhập, tổng hợp theo ngày/tháng và theo nhà cung cấp. Báo cáo tính theo **ngày xác nhận nhập**, loại phiếu nháp/đã hủy khỏi số liệu nhập; mọi phiếu nháp vẫn hiển thị để tiếp tục xử lý. Tồn kho trên màn hình là tồn **hiện tại**, không phải ảnh chụp tồn tại ngày cuối kỳ.
+
+Tồn khả dụng là số chưa giữ cho đơn. Số đang giữ gồm đơn chờ xác nhận, đã xác nhận, đang chuẩn bị hoặc chờ nhận tại cửa hàng; ước tính tại kho = khả dụng + đang giữ. Đây là số hệ thống tính, cần kiểm đếm để đối chiếu thực tế.
+
+Nhật ký ghi tồn đầu khi bật tính năng, tồn ban đầu sản phẩm, nhập hàng, giữ hàng cho đơn, hoàn do hủy đơn và điều chỉnh tồn. Nâng cấp giữ số tồn cũ làm tồn đầu, **không tự tạo phiếu nhập, nhà cung cấp hoặc giá nhập cho lịch sử chưa có**. Sửa tồn ở mục sản phẩm là điều chỉnh kiểm kê, không được tính thành nhập từ nhà cung cấp. Khi tạo mã hàng mới có thể để tồn 0 rồi lập phiếu nhập để ghi đủ giá và nhà cung cấp, tránh cộng hàng hai lần.
+
+Giá trị nhập là tổng số lượng × giá nhập được lưu trên phiếu, chưa quản lý công nợ/thanh toán nhà cung cấp, thuế hoặc định giá xuất kho. Nó không tự trừ vào báo cáo thu tiền bán hàng. Nhân viên vẫn chỉ xem tồn qua danh sách sản phẩm và thêm mã hàng mới; không xem giá nhập hay xác nhận nhập kho.
+
+## Báo cáo doanh thu và in bill
 
 Admin mở **Doanh thu & tăng trưởng** để xem doanh thu tổng hợp, chọn khoảng ngày, xem biểu đồ theo ngày (hoặc theo tháng khi khoảng chọn trên 62 ngày), so sánh với kỳ trước có cùng số ngày, số đơn, khách mới và sản phẩm đã giao/nhận thành công.
 
@@ -117,7 +137,7 @@ Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên 
 
 Database tự tạo tại `data/mocvai.sqlite`; WAL/SHM có thể xuất hiện khi server chạy. Lần chạy đầu nạp 12 sản phẩm từ UI gốc, mặc định mỗi màu/size có 20 đơn vị để thử nghiệp vụ. Các con số này là dữ liệu mẫu, cần sửa tại admin trước khi vận hành thật.
 
-Các bảng: `users`, `sessions`, `products`, `variants`, `carts`, `cart_meta`, `orders`, `order_items`, `order_history`, `payment_events`, `loyalty_points`, `subscribers`, `audit`. Xem cấu trúc trong `schema.sql`.
+Các bảng: `users`, `sessions`, `products`, `variants`, `carts`, `cart_meta`, `orders`, `order_items`, `order_history`, `payment_events`, `loyalty_points`, `inventory_receipts`, `inventory_receipt_items`, `stock_movements`, `subscribers`, `audit`. Xem cấu trúc trong `schema.sql`.
 
 Các biến môi trường PowerShell, đặt trước khi chạy server:
 

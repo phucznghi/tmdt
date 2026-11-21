@@ -59,3 +59,24 @@ CREATE TABLE IF NOT EXISTS loyalty_points (
  created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS loyalty_customer ON loyalty_points(user_id,created_at);
+CREATE TABLE IF NOT EXISTS inventory_receipts (
+ id TEXT PRIMARY KEY, supplier TEXT NOT NULL, supplier_reference TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+ status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','received','cancelled')),
+ request_key TEXT NOT NULL, created_by INTEGER NOT NULL REFERENCES users(id), created_at TEXT NOT NULL,
+ confirmed_by INTEGER REFERENCES users(id), confirmed_at TEXT, cancelled_at TEXT,
+ UNIQUE(created_by,request_key)
+);
+CREATE TABLE IF NOT EXISTS inventory_receipt_items (
+ id INTEGER PRIMARY KEY, receipt_id TEXT NOT NULL REFERENCES inventory_receipts(id),
+ variant_id INTEGER NOT NULL REFERENCES variants(id), name TEXT NOT NULL, color TEXT NOT NULL, size TEXT NOT NULL,
+ qty INTEGER NOT NULL CHECK(qty BETWEEN 1 AND 100000), unit_cost INTEGER NOT NULL CHECK(unit_cost>=0),
+ UNIQUE(receipt_id,variant_id)
+);
+CREATE TABLE IF NOT EXISTS stock_movements (
+ id INTEGER PRIMARY KEY, variant_id INTEGER NOT NULL REFERENCES variants(id), delta INTEGER NOT NULL,
+ kind TEXT NOT NULL CHECK(kind IN ('opening','initial','receipt','order_reserve','order_cancel','adjustment')),
+ reference TEXT NOT NULL, actor INTEGER REFERENCES users(id), stock_after INTEGER NOT NULL CHECK(stock_after>=0),
+ created_at TEXT NOT NULL, UNIQUE(kind,reference,variant_id)
+);
+CREATE INDEX IF NOT EXISTS inventory_received_date ON inventory_receipts(status,confirmed_at);
+CREATE INDEX IF NOT EXISTS movements_variant_date ON stock_movements(variant_id,created_at);

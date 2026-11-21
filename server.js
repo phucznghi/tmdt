@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { migrateStaffRole,migrateFulfillment } from './migrations.js';
 import {PROVINCES,STORE_PROVINCE,OUTSIDE_FEE,storeAddress,selection,shippingFee} from './shipping.js';
 import {buildReport} from './reports.js';
+import {inventoryService,initializeStockHistory,recordMovement} from './inventory.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const STATUS = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',ready:'Chờ nhận tại cửa hàng',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
@@ -53,6 +54,8 @@ export function createApp(options={}) {
   run("INSERT INTO users(email,name,password,role) VALUES(?,?,?,'admin')",mail,'Quản trị Mộc Vải',passwordHash(pass));
  }
  if(options.admin) createAdmin(options.admin.email,options.admin.password);
+ initializeStockHistory(db);
+ const inventory=inventoryService(db);
  const pointsBalance=id=>one('SELECT COALESCE(SUM(points),0) AS balance FROM loyalty_points WHERE user_id=?',id).balance;
  const publicUser=u=>u?{id:u.id,email:u.email,name:u.name,role:u.role,phone:u.phone,address:u.address,active:!!u.active,loyaltyPoints:pointsBalance(u.id)}:null;
  function products(admin=false) {
@@ -87,7 +90,7 @@ export function createApp(options={}) {
   try {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
    if(!path.startsWith('/api/')) {
-    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
+    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
     const type=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';
     res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-cache'}); return res.end(readFileSync(join(ROOT,'public',file)));
@@ -178,6 +181,7 @@ export function createApp(options={}) {
      for(const i of c.items) {
       if(!i.active||!i.variant_active) fail(409,`${i.name} đã ngừng bán.`);
       if(run('UPDATE variants SET stock=stock-? WHERE id=? AND stock>=?',i.qty,i.variant_id,i.qty).changes!==1) fail(409,`${i.name} (${i.color}/${i.size}) không đủ tồn kho.`);
+      recordMovement(db,i.variant_id,-i.qty,'order_reserve',id,user.id);
      }
      run('INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at,fulfillment,province,store_address) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',id,user.id,key,receiver,p,address,c.subtotal,c.shipping,c.discount,c.total,b.method,now(),choice.fulfillment,choice.province,storeAddress());
      for(const i of c.items) run('INSERT INTO order_items(order_id,variant_id,name,color,size,img,price,qty) VALUES(?,?,?,?,?,?,?,?)',id,i.variant_id,i.name,i.color,i.size,i.img,i.price,i.qty);
@@ -199,6 +203,12 @@ export function createApp(options={}) {
      (method==='GET'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/invoice$/.test(path));
     if(user.role!=='admin'&&!(user.role==='staff'&&staffOrderAccess)) requireAdmin();
     if(method==='GET'&&path==='/api/admin/reports')return send(200,buildReport(db,{from:url.searchParams.get('from'),to:url.searchParams.get('to')}));
+    if(method==='GET'&&path==='/api/admin/inventory')return send(200,inventory.report({from:url.searchParams.get('from'),to:url.searchParams.get('to')}));
+    if(method==='POST'&&path==='/api/admin/inventory/receipts'){const result=inventory.create(b,user.id);return send(result.created?201:200,result.receipt);}
+    const receiptAction=path.match(/^\/api\/admin\/inventory\/receipts\/(NK[A-Z0-9]+)\/(confirm|cancel)$/);
+    if(method==='POST'&&receiptAction)return send(200,inventory[receiptAction[2]](receiptAction[1],user.id));
+    const receiptRead=path.match(/^\/api\/admin\/inventory\/receipts\/(NK[A-Z0-9]+)$/);
+    if(method==='GET'&&receiptRead)return send(200,inventory.receipt(receiptRead[1]));
     const invoiceMatch=path.match(/^\/api\/admin\/orders\/([A-Z0-9]+)\/invoice$/);
     if(method==='GET'&&invoiceMatch){const o=order(invoiceMatch[1]);return send(200,{order:o,storeAddress:o.store_address||storeAddress()});}
     if(method==='GET'&&path==='/api/admin/users') return send(200,all('SELECT * FROM users ORDER BY id DESC').map(u=>({...publicUser(u),created_at:u.created_at})));
@@ -259,7 +269,7 @@ export function createApp(options={}) {
     if(credit.changes) audit(actor,'loyalty.award',o.id);
    }
    if(status==='cancelled') {
-    for(const i of o.items) run('UPDATE variants SET stock=stock+? WHERE id=?',i.qty,i.variant_id);
+    for(const i of o.items){run('UPDATE variants SET stock=stock+? WHERE id=?',i.qty,i.variant_id);recordMovement(db,i.variant_id,i.qty,'order_cancel',o.id,actor);}
     if(o.payment_status==='paid') {run("UPDATE orders SET payment_status='refund_pending' WHERE id=?",o.id);run('INSERT INTO payment_events(order_id,status,reference,actor,created_at) VALUES(?,?,?,?,?)',o.id,'refund_pending','Đơn bị hủy; cần hoàn tiền cho khách.',actor,now());}
    }
    run('INSERT INTO order_history(order_id,status,note,actor,created_at) VALUES(?,?,?,?,?)',o.id,status,note,actor,now());audit(actor,'order.'+status,o.id);
@@ -280,7 +290,13 @@ export function createApp(options={}) {
    if(id) {const current=products(true).find(p=>p.id===id);if(!current) fail(404,'Không tìm thấy sản phẩm.');if(b.version!==current.version) fail(409,'Sản phẩm hoặc tồn kho đã thay đổi. Hãy tải lại trước khi sửa.');metadata.sold=current.sold;run('UPDATE products SET name=?,price=?,active=?,metadata=? WHERE id=?',name,price,Number(b.active),JSON.stringify(metadata),id);}
    else id=Number(run('INSERT INTO products(name,price,active,metadata) VALUES(?,?,?,?)',name,price,Number(b.active),JSON.stringify(metadata)).lastInsertRowid);
    run('UPDATE variants SET active=0 WHERE product_id=?',id);
-   for(const v of variants) run('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,?) ON CONFLICT(product_id,color,size) DO UPDATE SET hex=excluded.hex,img=excluded.img,stock=excluded.stock,active=1',id,v.color,v.size,v.hex,v.img,v.stock);
+   const stockReference='product-'+id+'-'+randomUUID();
+   for(const v of variants){
+    const previous=one('SELECT id,stock FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
+    run('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,?) ON CONFLICT(product_id,color,size) DO UPDATE SET hex=excluded.hex,img=excluded.img,stock=excluded.stock,active=1',id,v.color,v.size,v.hex,v.img,v.stock);
+    const current=one('SELECT id FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
+    if(!previous||previous.stock!==v.stock)recordMovement(db,current.id,v.stock-(previous?.stock||0),previous?'adjustment':'initial',stockReference,actor);
+   }
    audit(actor,'product.save',id);return id;
   });
  }

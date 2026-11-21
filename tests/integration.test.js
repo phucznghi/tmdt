@@ -24,6 +24,7 @@ async function fixture(t,options={}){
 const checkout=(requestKey='request-checkout-0001',method='cod')=>({receiver:'Nguyễn Văn An',phone:'0901234567',address:'128 Nguyễn Trãi, TP Hồ Chí Minh',method,requestKey,fulfillment:'delivery',province:'TP.HCM'});
 async function add(c,variant_id,qty=1){await c.call('/cart','PUT',{items:[{variant_id,qty}]});return c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'TP.HCM'});}
 async function deliver(admin,id){for(const status of ['confirmed','preparing','shipping','delivered'])await admin.call('/admin/orders/'+id+'/status','PATCH',{status,carrier:'GHN',tracking:'POINTS-TEST-001'});}
+const intake=(items,key='inventory-request-0001',supplier='Nhà cung cấp kiểm thử')=>({supplier,supplier_reference:'NCC-001',note:'Phiếu nhập kiểm thử',requestKey:key,items});
 
 test('register, real password auth, profile, admin permissions and CSRF',async t=>{
  const {client}=await fixture(t);const c=client();const {user}=await c.register();assert.equal(user.role,'customer');
@@ -240,4 +241,53 @@ test('fulfillment migration preserves historical shipping totals and existing ca
   db.prepare('INSERT INTO users(id,email,name,password) VALUES(?,?,?,?)').run(1,'old@example.test','Khách cũ',passwordHash('Old-password-2026'));db.exec("INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at) VALUES('MVOLD01',1,'old-order-request','Khách cũ','0901234567','Địa chỉ cũ',100000,70000,0,170000,'cod','2026-11-21T00:00:00Z'); INSERT INTO cart_meta(owner,promo) VALUES('u:1','WELCOME50');");db.close();
   app=createApp({dbPath});const o=app.db.prepare('SELECT * FROM orders').get();assert.equal(o.shipping,70000);assert.equal(o.total,170000);assert.equal(o.fulfillment,'delivery');assert.equal(app.db.prepare('SELECT promo FROM cart_meta').get().promo,'WELCOME50');assert.deepEqual(app.db.prepare('PRAGMA foreign_key_check').all(),[]);
  }finally{app?.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test('only admins can inspect inventory costs and create, confirm or cancel receipts',async t=>{
+ const {client,app}=await fixture(t);const admin=client(),staff=client(),buyer=client(),guest=client();await admin.login();const {user}=await staff.register('inventory-staff@example.test');await buyer.register();await admin.call('/admin/users/'+user.id,'PATCH',{role:'staff'});await staff.call('/me');await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});await guest.call('/me');
+ const v=(await admin.call('/admin/inventory')).stock[0],body=intake([{variant_id:v.id,qty:2,unit_cost:100000}]),r=await admin.call('/admin/inventory/receipts','POST',body,201);
+ for(const [c,status]of [[staff,403],[buyer,403],[guest,401]]){
+  await c.call('/admin/inventory','GET',undefined,status);await c.call('/admin/inventory/receipts/'+r.id,'GET',undefined,status);await c.call('/admin/inventory/receipts','POST',body,status);await c.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{},status);await c.call('/admin/inventory/receipts/'+r.id+'/cancel','POST',{},status);
+ }
+ assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,v.stock);
+});
+
+test('draft receipts do not change stock; confirmation is atomic and idempotent',async t=>{
+ const {client,app}=await fixture(t);const a=client();await a.login();const p=(await a.call('/admin/products'))[0],[v1,v2]=p.variants;
+ const body=intake([{variant_id:v1.id,qty:5,unit_cost:100000},{variant_id:v2.id,qty:3,unit_cost:80000}]);const r=await a.call('/admin/inventory/receipts','POST',{...body,total:1,status:'received'},201);assert.equal(r.status,'draft');assert.equal(r.total,740000);assert.equal(r.quantity,8);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v1.id).stock,v1.stock);
+ assert.equal((await a.call('/admin/inventory')).summary.receiptCount,0);assert.equal((await a.call('/admin/inventory/receipts','POST',body)).id,r.id);
+ const done=await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{});assert.equal(done.status,'received');assert.ok(done.confirmed_at);await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{});await a.call('/admin/inventory/receipts/'+r.id+'/cancel','POST',{},409);
+ assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v1.id).stock,v1.stock+5);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v2.id).stock,v2.stock+3);assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM stock_movements WHERE kind='receipt' AND reference=?").get(r.id).n,2);assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM audit WHERE action='inventory.receive' AND target=?").get(r.id).n,1);
+ await a.call('/admin/products/'+p.id,'PUT',p,409);assert.equal((await a.call('/admin/inventory')).summary.receivedValue,740000);
+});
+
+test('cancelled drafts never affect stock and cannot be confirmed',async t=>{
+ const {client,app}=await fixture(t);const a=client();await a.login();const v=(await a.call('/admin/inventory')).stock[0];const r=await a.call('/admin/inventory/receipts','POST',intake([{variant_id:v.id,qty:9,unit_cost:1000}]),201);
+ await a.call('/admin/inventory/receipts/'+r.id+'/cancel','POST',{});await a.call('/admin/inventory/receipts/'+r.id+'/cancel','POST',{});await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{},409);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,v.stock);const report=await a.call('/admin/inventory');assert.equal(report.summary.receivedQuantity,0);assert.equal(report.summary.receivedValue,0);assert.equal(report.receipts[0].status,'cancelled');
+});
+
+test('invalid receipt lines and totals are rejected before saving any draft',async t=>{
+ const {client,app}=await fixture(t);const a=client();await a.login();const v=(await a.call('/admin/inventory')).stock[0],line={variant_id:v.id,qty:1,unit_cost:1000};
+ for(const items of [[],[null],[{...line,qty:0}],[{...line,qty:-1}],[{...line,qty:1.5}],[{...line,unit_cost:-1}],[{...line,unit_cost:100000001}],[line,line],[{...line,qty:100000,unit_cost:100000000}]])await a.call('/admin/inventory/receipts','POST',intake(items),400);
+ await a.call('/admin/inventory/receipts','POST',intake([{...line,variant_id:9999999}]),404);assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM inventory_receipts').get().n,0);
+});
+
+test('a failing receipt line rolls back every stock and movement change',async t=>{
+ const {client,app}=await fixture(t);const a=client();await a.login();const [v1,v2]=(await a.call('/admin/inventory')).stock;app.db.prepare('UPDATE variants SET stock=99999 WHERE id=?').run(v2.id);
+ const r=await a.call('/admin/inventory/receipts','POST',intake([{variant_id:v1.id,qty:4,unit_cost:1000},{variant_id:v2.id,qty:2,unit_cost:1000}]),201);await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{},409);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v1.id).stock,v1.stock);assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v2.id).stock,99999);assert.equal((await a.call('/admin/inventory/receipts/'+r.id)).status,'draft');assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM stock_movements WHERE reference=?").get(r.id).n,0);
+ app.db.prepare('UPDATE variants SET stock=99998 WHERE id=?').run(v2.id);await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{});assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v2.id).stock,100000);
+});
+
+test('intake reports use confirmation date and warehouse movements explain holds, cancellations and adjustments',async t=>{
+ const {client,app,dir}=await fixture(t);const a=client(),c=client();await a.login();await c.register();const v=(await a.call('/admin/inventory')).stock[0];const r=await a.call('/admin/inventory/receipts','POST',intake([{variant_id:v.id,qty:5,unit_cost:120000}]),201);await a.call('/admin/inventory/receipts/'+r.id+'/confirm','POST',{});app.db.prepare('UPDATE inventory_receipts SET created_at=?,confirmed_at=? WHERE id=?').run('2026-11-20T00:00:00Z','2026-11-21T17:00:00Z',r.id);
+ const report=await a.call('/admin/inventory?from=2026-11-22&to=2026-11-22');assert.equal(report.summary.receivedQuantity,5);assert.equal(report.summary.receivedValue,600000);assert.equal(report.suppliers[0].value,600000);assert.equal(report.series[0].period,'2026-11-22');assert.equal((await a.call('/admin/inventory?from=2026-11-20&to=2026-11-20')).summary.receiptCount,0);
+ await add(c,v.id,2);const o=await c.call('/orders','POST',checkout(),201);let current=(await a.call('/admin/inventory')).stock.find(row=>row.id===v.id);assert.equal(current.reserved,2);assert.equal(current.stock,v.stock+3);assert.equal(current.onHand,v.stock+5);await c.call('/orders/'+o.id+'/cancel','POST',{});current=(await a.call('/admin/inventory')).stock.find(row=>row.id===v.id);assert.equal(current.reserved,0);assert.equal(current.stock,v.stock+5);
+ const p=(await a.call('/admin/products')).find(p=>p.id===v.product_id);p.variants=p.variants.filter(v=>v.active);p.variants.find(row=>row.id===v.id).stock++;await a.call('/admin/products/'+p.id,'PUT',p);assert.equal(app.db.prepare('SELECT SUM(delta) AS n FROM stock_movements WHERE variant_id=?').get(v.id).n,v.stock+6);
+ assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM stock_movements WHERE variant_id=? AND kind='order_reserve'").get(v.id).n,1);assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM stock_movements WHERE variant_id=? AND kind='order_cancel'").get(v.id).n,1);assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM stock_movements WHERE variant_id=? AND kind='adjustment'").get(v.id).n,1);
+ const before=app.db.prepare('SELECT COUNT(*) AS n FROM stock_movements').get().n,reopened=createApp({dbPath:join(dir,'test.sqlite')});try{assert.equal(reopened.db.prepare('SELECT COUNT(*) AS n FROM stock_movements').get().n,before);assert.equal(reopened.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,v.stock+6);assert.deepEqual(reopened.db.prepare('PRAGMA foreign_key_check').all(),[]);}finally{reopened.close();}
+});
+
+test('upgrading an older warehouse records current opening stock without inventing receipts',async t=>{
+ const {app,dir}=await fixture(t);const v=app.db.prepare('SELECT id FROM variants LIMIT 1').get();app.db.prepare('UPDATE variants SET stock=7 WHERE id=?').run(v.id);app.db.exec('DROP TABLE stock_movements');
+ const reopened=createApp({dbPath:join(dir,'test.sqlite')});try{const row=reopened.db.prepare('SELECT * FROM stock_movements WHERE variant_id=?').get(v.id);assert.equal(row.kind,'opening');assert.equal(row.delta,7);assert.equal(row.stock_after,7);assert.equal(reopened.db.prepare('SELECT COUNT(*) AS n FROM inventory_receipts').get().n,0);assert.equal(reopened.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');}finally{reopened.close();}
 });
