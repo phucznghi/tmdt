@@ -4,7 +4,8 @@ import {createHash} from 'node:crypto';
 import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {createApp} from '../server.js';
+import {DatabaseSync} from 'node:sqlite';
+import {createApp,passwordHash} from '../server.js';
 
 const ADMIN={email:'admin@example.test',password:'Admin-password-2026'};
 async function fixture(t,options={}){
@@ -93,4 +94,61 @@ test('invalid cart payload and changed price quote are rejected without creating
  const {client,app}=await fixture(t);const c=client();await c.register();await c.call('/cart','PUT',{items:[null]},400);const v=(await c.call('/products'))[0].variants[0];const cart=await add(c,v.id);app.db.prepare('UPDATE products SET price=price+1000 WHERE id=?').run(v.product_id);
  await c.call('/orders','POST',{...checkout(),quote:cart.quote},409);assert.equal((await c.call('/orders')).length,0);assert.equal((await c.call('/cart')).items.length,1);
  const fresh=await c.call('/cart');await c.call('/orders','POST',{...checkout(),quote:fresh.quote},201);
+});
+
+test('staff can process and ship orders but cannot access admin-only resources or payments',async t=>{
+ const {client,app}=await fixture(t);const admin=client(),staff=client(),buyer=client();await admin.login();const {user}=await staff.register('staff@example.test');await buyer.register('customer@example.test');
+ await admin.call('/admin/users/'+user.id,'PATCH',{role:'staff'});
+ // Granting access revokes the prior customer session, then a fresh sign-in gets staff access.
+ assert.equal((await staff.call('/me')).user,null);
+ await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});
+ assert.equal((await staff.call('/me')).user.role,'staff');
+ const variant=(await buyer.call('/products'))[0].variants[0];await add(buyer,variant.id);const o=await buyer.call('/orders','POST',checkout(),201);
+ assert.equal((await staff.call('/admin/orders'))[0].id,o.id);
+ const path='/admin/orders/'+o.id;
+ for(const status of ['confirmed','preparing'])await staff.call(path+'/status','PATCH',{status});
+ await staff.call(path+'/status','PATCH',{status:'shipping',carrier:'GHN',tracking:'STAFF-001'});
+ await staff.call(path+'/status','PATCH',{status:'delivered'});
+ for(const p of ['/admin/users','/admin/customers','/admin/products'])await staff.call(p,'GET',undefined,403);
+ await staff.call('/admin/users/'+user.id,'PATCH',{role:'admin'},403);
+ await staff.call('/admin/customers/'+user.id,'PATCH',{active:false},403);
+ await staff.call('/admin/products','POST',{},403);
+ await staff.call('/admin/products/1','PUT',{},403);
+ await staff.call(path+'/payment','PATCH',{status:'paid',reference:'STAFF-COD-001'},403);
+ await admin.call(path+'/payment','PATCH',{status:'paid',reference:'ADMIN-COD-001'});
+ // A refund-ready order remains protected even when the staff calls the API directly.
+ app.db.prepare("UPDATE orders SET payment_status='refund_pending' WHERE id=?").run(o.id);
+ await staff.call(path+'/payment','PATCH',{status:'refunded',reference:'STAFF-REFUND-001'},403);
+ assert.equal(app.db.prepare('SELECT payment_status FROM orders WHERE id=?').get(o.id).payment_status,'refund_pending');
+ await admin.call(path+'/payment','PATCH',{status:'refunded',reference:'ADMIN-REFUND-001'});
+ assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM audit WHERE actor=? AND action='order.shipping'").get(user.id).n,1);
+});
+
+test('only admins manage roles; demotion and locking immediately revoke staff sessions',async t=>{
+ const {client}=await fixture(t);const admin=client(),staff=client(),buyer=client();await admin.login();const {user}=await staff.register('staff@example.test');const buyerUser=(await buyer.register('buyer@example.test')).user;
+ const users=await admin.call('/admin/users');assert.ok(users.every(u=>!('password'in u)));const administrator=users.find(u=>u.role==='admin');
+ await buyer.call('/admin/users/'+buyerUser.id,'PATCH',{role:'admin'},403);
+ await admin.call('/admin/users/'+user.id,'PATCH',{role:'superuser'},400);
+ await admin.call('/admin/users/'+administrator.id,'PATCH',{role:'staff'},409);
+ await admin.call('/admin/users/'+administrator.id,'PATCH',{active:false},409);
+ await admin.call('/admin/users/'+user.id,'PATCH',{role:'staff'});await staff.call('/me');await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});
+ await admin.call('/admin/users/'+user.id,'PATCH',{role:'customer'});await staff.call('/admin/orders','GET',undefined,401);await staff.call('/me');await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});await staff.call('/admin/orders','GET',undefined,403);
+ await admin.call('/admin/users/'+user.id,'PATCH',{role:'staff',active:false});await staff.call('/me');await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'},401);
+ await admin.call('/admin/users/'+user.id,'PATCH',{active:true});await staff.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});await staff.call('/admin/orders');
+});
+
+test('public registration and profile cannot grant staff or admin roles',async t=>{
+ const {client}=await fixture(t);const c=client();await c.call('/me');const result=await c.call('/auth/register','POST',{name:'Khách thử',email:'self-promote@example.test',password:'Buyer-password-2026',role:'staff'});assert.equal(result.user.role,'customer');await c.call('/profile','PATCH',{name:'Tên mới',phone:'',address:'',role:'admin'});assert.equal((await c.call('/me')).user.role,'customer');await c.call('/admin/users','GET',undefined,403);
+});
+
+test('legacy database migration preserves users, passwords, orders, sessions and foreign keys',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'mocvai-migrate-')),dbPath=join(dir,'legacy.sqlite');let app;
+ try {
+  const db=new DatabaseSync(dbPath);const schema=readFileSync(new URL('../schema.sql',import.meta.url),'utf8').replace("'customer','staff','admin'","'customer','admin'");db.exec(schema);
+  const password=passwordHash('Legacy-password-2026');db.prepare('INSERT INTO users(id,email,name,password,role) VALUES(?,?,?,?,?)').run(7,'legacy-admin@example.test','Admin cũ',password,'admin');db.prepare('INSERT INTO users(id,email,name,password,role) VALUES(?,?,?,?,?)').run(8,'legacy-customer@example.test','Khách cũ',password,'customer');
+  db.prepare('INSERT INTO sessions(token,csrf,user_id,expires) VALUES(?,?,?,?)').run('legacy-session','legacy-csrf',7,Date.now()+86400000);
+  db.exec("INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at) VALUES('MVLEGACY01',8,'legacy-order-request','Khách cũ','0901234567','Địa chỉ cũ',1000,0,0,1000,'cod','2026-11-21T00:00:00Z'); INSERT INTO order_history(order_id,status,note,actor,created_at) VALUES('MVLEGACY01','pending','Lịch sử cũ',7,'2026-11-21T00:00:00Z'); INSERT INTO audit(actor,action,target,created_at) VALUES(7,'legacy.action','MVLEGACY01','2026-11-21T00:00:00Z');");db.close();
+  app=createApp({dbPath});assert.equal(app.db.prepare('SELECT password FROM users WHERE id=7').get().password,password);assert.equal(app.db.prepare('SELECT user_id FROM orders').get().user_id,8);assert.equal(app.db.prepare('SELECT actor FROM order_history').get().actor,7);assert.equal(app.db.prepare('SELECT user_id FROM sessions').get().user_id,7);assert.equal(app.db.prepare('SELECT actor FROM audit').get().actor,7);
+  app.db.prepare("UPDATE users SET role='staff' WHERE id=8").run();assert.equal(app.db.prepare('PRAGMA foreign_keys').get().foreign_keys,1);assert.deepEqual(app.db.prepare('PRAGMA foreign_key_check').all(),[]);app.close();app=createApp({dbPath});assert.equal(app.db.prepare('SELECT role FROM users WHERE id=8').get().role,'staff');assert.equal(app.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
+ } finally {app?.close();rmSync(dir,{recursive:true,force:true});}
 });

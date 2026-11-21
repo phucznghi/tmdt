@@ -21,6 +21,31 @@ Lệnh đầu yêu cầu bạn tự đặt mật khẩu admin, tối thiểu 8 k
 
 Đăng nhập admin tại `/account`, sau đó bấm **Quản trị**. Khách tự đăng ký tài khoản mới. Dùng `Ctrl+C` để dừng server.
 
+## Nhân viên và phân quyền
+
+Hệ thống có ba vai trò, kiểm tra quyền tại backend:
+
+| Chức năng | Khách hàng | Nhân viên | Admin |
+| --- | --- | --- | --- |
+| Mua hàng, xem đơn cá nhân | Có | Có | Có |
+| Xem tất cả đơn, xử lý trạng thái và vận chuyển | Không | Có | Có |
+| Sửa sản phẩm / tồn kho, quản lý khách hàng | Không | Không | Có |
+| Xác nhận nhận tiền hoặc hoàn tiền | Không | Không | Có |
+| Cấp / thu hồi quyền, khóa / mở tài khoản | Không | Không | Có |
+
+Để thêm nhân viên:
+
+1. Người dùng đăng ký tài khoản tại `/account`.
+2. Admin đăng nhập, mở `/admin` → **Tài khoản & phân quyền**.
+3. Tìm email, chọn **Nhân viên**, giữ trạng thái hoạt động và bấm **Lưu quyền**.
+4. Nhân viên đăng nhập lại, mở **Xử lý đơn hàng** để vào khu vực đơn và vận chuyển.
+
+Nhân viên có thể xác nhận, chuẩn bị, giao và hoàn tất đơn theo quy trình hiện có; có thể hủy trước khi giao cho đơn vị vận chuyển. Hủy đơn đã trả tiền chỉ tạo yêu cầu chờ hoàn tiền, không xác nhận đã hoàn tiền. Admin thực hiện bước đối soát riêng.
+
+Thay đổi vai trò hoặc khóa tài khoản hủy các phiên đăng nhập cũ ngay lập tức. Tự đăng ký hoặc sửa hồ sơ không thể tự nâng quyền. Admin không được tự khóa hoặc tự hạ quyền tài khoản đang đăng nhập; hệ thống giữ ít nhất một admin hoạt động. Những thay đổi quyền có nhật ký audit.
+
+Khi khởi động phiên bản mới, database cũ chỉ có `customer/admin` sẽ tự nâng cấp để hỗ trợ `staff`, giữ nguyên ID tài khoản, mật khẩu, phiên và dữ liệu đơn hàng. Không cần xóa database; kiểm thử migration bao gồm kiểm tra khóa ngoại và tính toàn vẹn dữ liệu.
+
 Không mở trực tiếp `index.html` bằng `file://`. Website cần chạy qua server để gọi API. GitHub Pages chỉ phục vụ file tĩnh nên không chạy được backend này.
 
 Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên để bảo toàn bản UI tĩnh hiện tại. Bản nối backend nằm ở `public/index.html` và được phục vụ qua `npm.cmd start`. Các chức năng phần 5–7 cần truy cập địa chỉ server Node.js, không phải bản GitHub Pages tĩnh.

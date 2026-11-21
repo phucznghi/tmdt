@@ -4,6 +4,7 @@ import { randomBytes, scryptSync, timingSafeEqual, createHash, randomUUID } from
 import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { migrateStaffRole } from './migrations.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const STATUS = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
@@ -22,7 +23,9 @@ function image(value) { const v=string(value,'URL ảnh',1,2000); try { if(new U
 export function createApp(options={}) {
  const dbPath=options.dbPath||process.env.DB_PATH||join(ROOT,'data','mocvai.sqlite');
  if(dbPath!==':memory:') mkdirSync(dirname(resolve(dbPath)),{recursive:true});
- const db=new DatabaseSync(dbPath); db.exec(readFileSync(join(ROOT,'schema.sql'),'utf8'));
+ const db=new DatabaseSync(dbPath);
+ const schema=readFileSync(join(ROOT,'schema.sql'),'utf8');
+ db.exec(schema);migrateStaffRole(db,schema);
  const run=(sql,...args)=>db.prepare(sql).run(...args);
  const one=(sql,...args)=>db.prepare(sql).get(...args);
  const all=(sql,...args)=>db.prepare(sql).all(...args);
@@ -162,7 +165,28 @@ export function createApp(options={}) {
    }
    if(method==='POST'&&path==='/api/newsletter') {run('INSERT OR IGNORE INTO subscribers(email) VALUES(?)',email(b.email));return send(201,{ok:true});}
    if(path.startsWith('/api/admin/')) {
-    requireAdmin();
+    requireUser();
+    const staffOrderAccess=(method==='GET'&&path==='/api/admin/orders')||
+     (method==='PATCH'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/status$/.test(path));
+    if(user.role!=='admin'&&!(user.role==='staff'&&staffOrderAccess)) requireAdmin();
+    if(method==='GET'&&path==='/api/admin/users') return send(200,all('SELECT * FROM users ORDER BY id DESC').map(u=>({...publicUser(u),created_at:u.created_at})));
+    const userMatch=path.match(/^\/api\/admin\/users\/(\d+)$/);
+    if(method==='PATCH'&&userMatch) {
+     const id=Number(userMatch[1]),target=one('SELECT * FROM users WHERE id=?',id);
+     if(!target) fail(404,'Không tìm thấy tài khoản.');
+     if(b.role===undefined&&b.active===undefined) fail(400,'Cần chọn vai trò hoặc trạng thái tài khoản.');
+     if(b.role!==undefined&&!['customer','staff','admin'].includes(b.role)) fail(400,'Vai trò không hợp lệ.');
+     if(b.active!==undefined&&typeof b.active!=='boolean') fail(400,'Trạng thái không hợp lệ.');
+     const role=b.role??target.role,active=b.active??!!target.active;
+     if(id===user.id&&(role!=='admin'||!active)) fail(409,'Không thể tự khóa hoặc hạ quyền tài khoản đang đăng nhập.');
+     if(target.role==='admin'&&target.active&&(role!=='admin'||!active)&&one("SELECT COUNT(*) AS n FROM users WHERE role='admin' AND active=1").n<=1) fail(409,'Phải giữ ít nhất một quản trị viên đang hoạt động.');
+     tx(()=>{
+      run('UPDATE users SET role=?,active=? WHERE id=?',role,Number(active),id);
+      if(role!==target.role||Number(active)!==target.active) run('DELETE FROM sessions WHERE user_id=?',id);
+      audit(user.id,`user.access:${target.role}->${role}:${Number(active)}`,id);
+     });
+     return send(200,publicUser(one('SELECT * FROM users WHERE id=?',id)));
+    }
     if(method==='GET'&&path==='/api/admin/products') return send(200,products(true));
     if(method==='POST'&&path==='/api/admin/products') {const id=saveProduct(b,null,user.id);return send(201,products(true).find(p=>p.id===id));}
     const productMatch=path.match(/^\/api\/admin\/products\/(\d+)$/);

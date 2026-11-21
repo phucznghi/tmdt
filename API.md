@@ -20,6 +20,8 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 | GET/POST | `/api/admin/products` | Danh sách / tạo sản phẩm |
 | PUT | `/api/admin/products/:id` | Sửa sản phẩm, phải gửi `version` lấy từ danh sách admin |
 | GET | `/api/admin/customers` | Danh sách khách và thống kê đơn |
+| GET | `/api/admin/users` | Chỉ admin: danh sách tài khoản và vai trò, không trả mật khẩu |
+| PATCH | `/api/admin/users/:id` | Chỉ admin: `{role?,active?}`; `customer` / `staff` / `admin`; đổi quyền hoặc trạng thái hủy các phiên cũ |
 | PATCH | `/api/admin/customers/:id` | `{active:true/false}`; khóa/mở khóa |
 | GET | `/api/admin/orders` | Tất cả đơn, chi tiết và lịch sử |
 | PATCH | `/api/admin/orders/:id/status` | `{status,carrier?,tracking?,note?}` |
@@ -28,3 +30,5 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 Sản phẩm tạo/sửa gồm `name,price,originalPrice,audience,category,fabric,badge,active,flashSale,variants`. Mỗi biến thể có `color,size,hex,img,stock`; màu/size không trùng; ảnh HTTPS. Biến thể không có trong lần lưu tiếp theo bị ngừng bán, không xóa lịch sử.
 
 Trạng thái đơn dùng `pending,confirmed,preparing,shipping,delivered,cancelled`. Trạng thái thanh toán dùng `unpaid,paid,refund_pending,refunded`. Giá, tồn kho và quyền truy cập luôn được kiểm tra ở server. Giá trị `quote` từ giỏ giúp client phát hiện giỏ hoặc tổng tiền đã thay đổi trước khi xác nhận. API danh sách hiện chưa phân trang; phù hợp phạm vi bài tập, cần bổ sung khi dữ liệu tăng.
+
+Vai trò `staff` chỉ được `GET /api/admin/orders` và `PATCH /api/admin/orders/:id/status` trong nhóm API quản trị. Mọi API sản phẩm/khách hàng/tài khoản/thanh toán ở nhóm này chỉ dành cho `admin`; gọi trực tiếp API không vượt qua được kiểm tra quyền. Đăng ký công khai luôn tạo `customer`.
