@@ -1,42 +1,42 @@
 const RAW=[
-  ["tee","Áo thun basic cổ tròn",199,"#ffffff","Trắng",0,"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80"],
-  ["tee","Áo thun oversize",249,"#1f2937","Đen",1,"https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80"],
-  ["tee","Áo thun in chữ",229,"#f59e0b","Vàng",0,"https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=600&q=80"],
-  ["tee","Áo polo nam",299,"#2563eb","Xanh dương",0,"https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=600&q=80"],
-  ["tee","Áo thun sọc",219,"#f472b6","Hồng",1,"https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=600&q=80"],
-  ["tee","Áo croptop nữ",189,"#10b981","Xanh lá",0,"https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80"],
-  ["shirt","Sơ mi trắng công sở",349,"#fafafa","Trắng",0,"https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=600&q=80"],
-  ["shirt","Sơ mi caro",379,"#b91c1c","Đỏ đô",1,"https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80"],
-  ["shirt","Sơ mi linen",399,"#d6c3a1","Be",0,"https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=600&q=80"],
-  ["shirt","Sơ mi denim",429,"#3b6ea5","Xanh denim",0,"https://images.unsplash.com/photo-1588359386417-3192772e16c4?auto=format&fit=crop&w=600&q=80"],
-  ["shirt","Sơ mi họa tiết",359,"#7c3aed","Tím",1,"https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80"],
-  ["hoodie","Hoodie nỉ basic",459,"#111827","Đen",0,"https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=600&q=80"],
-  ["hoodie","Hoodie oversize",499,"#fde68a","Vàng nhạt",1,"https://images.unsplash.com/photo-1578768079052-aa76e52ff62e?auto=format&fit=crop&w=600&q=80"],
-  ["hoodie","Hoodie zip",529,"#1e3a8a","Xanh navy",0,"https://images.unsplash.com/photo-1620799139834-6b8f844fbe61?auto=format&fit=crop&w=600&q=80"],
-  ["hoodie","Sweater len",479,"#a16207","Nâu",0,"https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=80"],
-  ["jacket","Áo khoác bomber",699,"#166534","Xanh rêu",1,"https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80"],
-  ["jacket","Áo khoác denim",649,"#60a5fa","Xanh jeans",0,"https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=600&q=80"],
-  ["jacket","Áo khoác gió",549,"#0f172a","Xanh đen",0,"https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80"],
-  ["jacket","Blazer thanh lịch",899,"#44403c","Xám đậm",0,"https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80"],
-  ["jacket","Áo khoác dạ",1290,"#9a3412","Nâu đất",1,"https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần jeans slim",499,"#1d4ed8","Xanh đậm",0,"https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần jeans ống rộng",549,"#93c5fd","Xanh nhạt",1,"https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần kaki",429,"#c2a878","Be",0,"https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần tây",459,"#111827","Đen",1,"https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần jogger",389,"#374151","Xám than",0,"https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=600&q=80"],
-  ["pants","Quần culottes",419,"#f9fafb","Trắng",0,"https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=600&q=80"],
-  ["shorts","Quần short kaki",249,"#a3b18a","Xanh sage",0,"https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=600&q=80"],
-  ["shorts","Quần short jean",279,"#3b82f6","Xanh jeans",1,"https://images.unsplash.com/photo-1565084888279-aca607ecce0c?auto=format&fit=crop&w=600&q=80"],
-  ["shorts","Quần short thể thao",199,"#ef4444","Đỏ",0,"https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=600&q=80"],
-  ["skirt","Chân váy chữ A",299,"#ec4899","Hồng đậm",0,"https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&w=600&q=80"],
-  ["skirt","Chân váy xếp ly",329,"#0ea5e9","Xanh biển",1,"https://images.unsplash.com/photo-1577900258307-26411733b430?auto=format&fit=crop&w=600&q=80"],
-  ["dress","Đầm hoa nhí",459,"#fb7185","Hồng san hô",0,"https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=600&q=80"],
-  ["dress","Đầm suông",429,"#14b8a6","Xanh ngọc",0,"https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80"],
-  ["dress","Đầm maxi",589,"#a855f7","Tím",1,"https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=600&q=80"]
+  ["tee","Áo thun basic cổ tròn",199,"#ffffff","Trắng",0],
+  ["tee","Áo thun oversize",249,"#1f2937","Đen",1],
+  ["tee","Áo thun in chữ",229,"#f59e0b","Vàng",0],
+  ["tee","Áo polo nam",299,"#2563eb","Xanh dương",0],
+  ["tee","Áo thun sọc",219,"#f472b6","Hồng",1],
+  ["tee","Áo croptop nữ",189,"#10b981","Xanh lá",0],
+  ["shirt","Sơ mi trắng công sở",349,"#fafafa","Trắng",0],
+  ["shirt","Sơ mi caro",379,"#b91c1c","Đỏ đô",1],
+  ["shirt","Sơ mi linen",399,"#d6c3a1","Be",0],
+  ["shirt","Sơ mi denim",429,"#3b6ea5","Xanh denim",0],
+  ["shirt","Sơ mi họa tiết",359,"#7c3aed","Tím",1],
+  ["hoodie","Hoodie nỉ basic",459,"#111827","Đen",0],
+  ["hoodie","Hoodie oversize",499,"#fde68a","Vàng nhạt",1],
+  ["hoodie","Hoodie zip",529,"#1e3a8a","Xanh navy",0],
+  ["hoodie","Sweater len",479,"#a16207","Nâu",0],
+  ["jacket","Áo khoác bomber",699,"#166534","Xanh rêu",1],
+  ["jacket","Áo khoác denim",649,"#60a5fa","Xanh jeans",0],
+  ["jacket","Áo khoác gió",549,"#0f172a","Xanh đen",0],
+  ["jacket","Blazer thanh lịch",899,"#44403c","Xám đậm",0],
+  ["jacket","Áo khoác dạ",1290,"#9a3412","Nâu đất",1],
+  ["pants","Quần jeans slim",499,"#1d4ed8","Xanh đậm",0],
+  ["pants","Quần jeans ống rộng",549,"#93c5fd","Xanh nhạt",1],
+  ["pants","Quần kaki",429,"#c2a878","Be",0],
+  ["pants","Quần tây",459,"#111827","Đen",1],
+  ["pants","Quần jogger",389,"#374151","Xám than",0],
+  ["pants","Quần culottes",419,"#f9fafb","Trắng",0],
+  ["shorts","Quần short kaki",249,"#a3b18a","Xanh sage",0],
+  ["shorts","Quần short jean",279,"#3b82f6","Xanh jeans",1],
+  ["shorts","Quần short thể thao",199,"#ef4444","Đỏ",0],
+  ["skirt","Chân váy chữ A",299,"#ec4899","Hồng đậm",0],
+  ["skirt","Chân váy xếp ly",329,"#0ea5e9","Xanh biển",1],
+  ["dress","Đầm hoa nhí",459,"#fb7185","Hồng san hô",0],
+  ["dress","Đầm suông",429,"#14b8a6","Xanh ngọc",0],
+  ["dress","Đầm maxi",589,"#a855f7","Tím",1]
 ];
 
 const D=RAW.map((a,i)=>({
-  id:i,t:a[0],n:a[1],p:a[2]*1000,c:a[3],cn:a[4],s:!!a[5],img:a[6]
+  id:i,t:a[0],n:a[1],p:a[2]*1000,c:a[3],cn:a[4],s:!!a[5]
 }));
 
 const CAT={tee:"Áo",shirt:"Áo",hoodie:"Áo",jacket:"Áo khoác",pants:"Quần",shorts:"Quần",skirt:"Váy & Đầm",dress:"Váy & Đầm"};
@@ -47,9 +47,144 @@ const DESC={
   "Váy & Đầm":"Chất vải nhẹ, rủ đẹp, phù hợp đi làm, dạo phố và tiệc cuối năm."
 };
 
-const fallbackSvg=(label,bg)=>`data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="750" viewBox="0 0 600 750"><rect width="600" height="750" fill="#e5e7eb"/><circle cx="300" cy="330" r="110" fill="${bg}" stroke="#17181a" stroke-opacity=".2" stroke-width="4"/><text x="300" y="500" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#17181a">${label}</text></svg>`)}`;
+// Vẽ đúng kiểu dáng & họa tiết đặc trưng theo từng mã sản phẩm (0..33)
+function artInner(p){
+  const c=p.c, stroke="rgba(20,22,26,.45)", dark="#17181a";
+  const isLight=["#ffffff","#fafafa","#f9fafb","#fde68a","#d6c3a1","#93c5fd","#a3b18a"].includes(c.toLowerCase());
+  const accent=isLight?"#334155":"#f8fafc";
 
-const imgTag=(p,alt)=>`<img src="${p.img}" alt="${esc(alt||p.n)}" loading="lazy" onerror="this.onerror=null;this.src=fallbackSvg('${esc(p.n)}','${esc(p.c)}')">`;
+  switch(p.id){
+    case 0: // Áo thun basic cổ tròn - Trắng
+      return `<path d="M32 20 L12 33 L20 46 L29 40 V84 H71 V40 L80 46 L88 33 L68 20 Q50 31 32 20Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 1: // Áo thun oversize - Đen
+      return `<path d="M26 18 L6 34 L16 50 L28 42 V85 H72 V42 L84 50 L94 34 L74 18 Q50 29 26 18Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 2: // Áo thun in chữ - Vàng
+      return `<path d="M30 19 L10 33 L18 46 L28 40 V84 H72 V40 L82 46 L90 33 L70 19 Q50 30 30 19Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="35" y="47" width="30" height="6" rx="2" fill="${dark}"/>
+      <rect x="39" y="57" width="22" height="5" rx="2" fill="${dark}"/>`;
+    case 3: // Áo polo nam - Xanh dương
+      return `<path d="M30 19 L10 33 L18 46 L28 40 V84 H72 V40 L82 46 L90 33 L70 19 L58 25 L50 35 L42 25Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="35" x2="50" y2="51" stroke="${accent}" stroke-width="2.2"/>
+      <circle cx="50" cy="40" r="1.5" fill="${accent}"/><circle cx="50" cy="46" r="1.5" fill="${accent}"/>`;
+    case 4: // Áo thun sọc - Hồng
+      return `<defs><clipPath id="cp4"><path d="M30 19 L10 33 L18 46 L28 40 V84 H72 V40 L82 46 L90 33 L70 19 Q50 30 30 19Z"/></clipPath></defs>
+      <g clip-path="url(#cp4)"><rect x="0" y="15" width="100" height="75" fill="${c}"/>
+      <path d="M0 32 H100 M0 44 H100 M0 56 H100 M0 68 H100 M0 80 H100" stroke="#ffffff" stroke-width="4.5"/></g>
+      <path d="M30 19 L10 33 L18 46 L28 40 V84 H72 V40 L82 46 L90 33 L70 19 Q50 30 30 19Z" fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 5: // Áo croptop nữ - Xanh lá
+      return `<path d="M32 22 L13 34 L20 45 L29 40 V68 H71 V40 L80 45 L87 34 L68 22 Q50 32 32 22Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 6: // Sơ mi trắng công sở
+      return `<path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="28" x2="50" y2="85" stroke="${stroke}" stroke-width="1.6"/>
+      <circle cx="50" cy="42" r="1.5" fill="${stroke}"/><circle cx="50" cy="55" r="1.5" fill="${stroke}"/><circle cx="50" cy="68" r="1.5" fill="${stroke}"/>`;
+    case 7: // Sơ mi caro - Đỏ đô
+      return `<defs><clipPath id="cp7"><path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z"/></clipPath></defs>
+      <g clip-path="url(#cp7)"><rect x="0" y="15" width="100" height="75" fill="${c}"/>
+      <path d="M24 15 V90 M40 15 V90 M56 15 V90 M72 15 V90 M0 34 H100 M0 50 H100 M0 66 H100 M0 82 H100" stroke="#ffffff" stroke-opacity=".55" stroke-width="3"/></g>
+      <path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z" fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 8: // Sơ mi linen - Be
+      return `<path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="28" x2="50" y2="85" stroke="${stroke}" stroke-width="1.6"/>
+      <path d="M34 50 H44 V62 H34Z" fill="none" stroke="${stroke}" stroke-width="1.5"/>`;
+    case 9: // Sơ mi denim - Xanh denim
+      return `<path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="28" x2="50" y2="85" stroke="#fde68a" stroke-width="1.6" stroke-dasharray="3 2"/>
+      <path d="M33 48 H44 V60 H33ZM56 48 H67 V60 H56Z" fill="none" stroke="#fde68a" stroke-width="1.5"/>`;
+    case 10: // Sơ mi họa tiết - Tím
+      return `<path d="M32 18 L9 43 L18 52 L28 41 V85 H72 V41 L82 52 L91 43 L68 18 L50 28Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="38" cy="48" r="3" fill="#fde68a"/><circle cx="62" cy="52" r="3" fill="#fde68a"/><circle cx="42" cy="68" r="3" fill="#86efac"/><circle cx="58" cy="72" r="3" fill="#86efac"/>`;
+    case 11: // Hoodie nỉ basic - Đen
+      return `<path d="M31 23 Q50 10 69 23 L90 48 L80 58 L70 45 V85 H30 V45 L20 58 L10 48Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M36 64 H64 V76 H36Z" fill="none" stroke="${accent}" stroke-width="1.8"/>`;
+    case 12: // Hoodie oversize - Vàng nhạt
+      return `<path d="M27 22 Q50 8 73 22 L94 48 L82 60 L71 46 V86 H29 V46 L18 60 L6 48Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M44 31 V46 M56 31 V46" stroke="${stroke}" stroke-width="1.8"/>`;
+    case 13: // Hoodie zip - Xanh navy
+      return `<path d="M31 23 Q50 10 69 23 L90 48 L80 58 L70 45 V85 H30 V45 L20 58 L10 48Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="29" x2="50" y2="85" stroke="${accent}" stroke-width="2.2"/>`;
+    case 14: // Sweater len - Nâu
+      return `<path d="M30 20 L9 38 L18 50 L28 41 V85 H72 V41 L82 50 L91 38 L70 20 Q50 30 30 20Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M28 78 H72 M28 41 H18 M72 41 H82" stroke="${accent}" stroke-opacity=".5" stroke-width="3"/>`;
+    case 15: // Áo khoác bomber - Xanh rêu
+      return `<path d="M31 18 L8 42 L17 52 L28 41 V83 H72 V41 L83 52 L92 42 L69 18 L50 26Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="28" y="79" width="44" height="6" rx="2" fill="#1e293b"/>`;
+    case 16: // Áo khoác denim - Xanh jeans
+      return `<path d="M31 18 L8 42 L17 52 L28 41 V85 H72 V41 L83 52 L92 42 L69 18 L50 26Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="26" x2="50" y2="85" stroke="#1e3a8a" stroke-width="1.8"/>
+      <path d="M33 47 H44 V58 H33ZM56 47 H67 V58 H56Z" fill="none" stroke="#1e3a8a" stroke-width="1.6"/>`;
+    case 17: // Áo khoác gió - Xanh đen
+      return `<path d="M31 18 L8 42 L17 52 L28 41 V85 H72 V41 L83 52 L92 42 L69 18 Q50 28 31 18Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="25" x2="50" y2="85" stroke="#38bdf8" stroke-width="2"/>`;
+    case 18: // Blazer thanh lịch - Xám đậm
+      return `<path d="M31 16 L8 44 L17 53 L28 41 V86 H72 V41 L83 53 L92 44 L69 16 L50 25Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M50 25 L38 52 L50 62 L62 52Z" fill="none" stroke="${accent}" stroke-width="1.8"/>
+      <path d="M33 66 H45 M55 66 H67" stroke="${accent}" stroke-width="1.6"/>`;
+    case 19: // Áo khoác dạ - Nâu đất
+      return `<path d="M31 15 L9 44 L19 52 L29 40 V89 H71 V40 L81 52 L91 44 L69 15 L50 25Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="50" y1="25" x2="50" y2="89" stroke="${stroke}" stroke-width="1.8"/>
+      <circle cx="55" cy="48" r="2.2" fill="${accent}"/><circle cx="55" cy="62" r="2.2" fill="${accent}"/>`;
+    case 20: // Quần jeans slim - Xanh đậm
+      return `<path d="M32 14 H68 L73 88 H53 L50 42 L47 88 H27Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="32" y1="24" x2="68" y2="24" stroke="#f59e0b" stroke-width="1.6"/>
+      <line x1="50" y1="24" x2="50" y2="42" stroke="#f59e0b" stroke-width="1.6"/>`;
+    case 21: // Quần jeans ống rộng - Xanh nhạt
+      return `<path d="M30 14 H70 L79 88 H54 L50 40 L46 88 H21Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="30" y1="24" x2="70" y2="24" stroke="#2563eb" stroke-width="1.6"/>`;
+    case 22: // Quần kaki - Be
+      return `<path d="M31 14 H69 L75 88 H53 L50 41 L47 88 H25Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="31" y1="24" x2="69" y2="24" stroke="${stroke}" stroke-width="1.6"/>
+      <path d="M31 24 L40 38 M69 24 L60 38" stroke="${stroke}" stroke-width="1.5"/>`;
+    case 23: // Quần tây - Đen
+      return `<path d="M31 14 H69 L75 88 H53 L50 41 L47 88 H25Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="37" y1="28" x2="36" y2="88" stroke="${accent}" stroke-opacity=".4" stroke-width="1.3"/>
+      <line x1="63" y1="28" x2="64" y2="88" stroke="${accent}" stroke-opacity=".4" stroke-width="1.3"/>`;
+    case 24: // Quần jogger - Xám than
+      return `<path d="M31 14 H69 L73 84 H54 L50 42 L46 84 H27Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="30" y="14" width="40" height="8" rx="3" fill="#111827"/>
+      <rect x="27" y="82" width="19" height="6" rx="2" fill="#111827"/><rect x="54" y="82" width="19" height="6" rx="2" fill="#111827"/>`;
+    case 25: // Quần culottes - Trắng
+      return `<path d="M30 14 H70 L81 84 H53 L50 38 L47 84 H19Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="30" y1="24" x2="70" y2="24" stroke="${stroke}" stroke-width="1.6"/>`;
+    case 26: // Quần short kaki - Xanh sage
+      return `<path d="M29 18 H71 L77 64 H53 L50 39 L47 64 H23Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="29" y1="27" x2="71" y2="27" stroke="${stroke}" stroke-width="1.6"/>`;
+    case 27: // Quần short jean - Xanh jeans
+      return `<path d="M29 18 H71 L78 63 H53 L50 39 L47 63 H22Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="29" y1="27" x2="71" y2="27" stroke="#f59e0b" stroke-width="1.6"/>`;
+    case 28: // Quần short thể thao - Đỏ
+      return `<path d="M28 18 H72 L79 62 H53 L50 38 L47 62 H21Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="28" y1="18" x2="21" y2="62" stroke="#ffffff" stroke-width="2.5"/>
+      <line x1="72" y1="18" x2="79" y2="62" stroke="#ffffff" stroke-width="2.5"/>`;
+    case 29: // Chân váy chữ A - Hồng đậm
+      return `<path d="M35 18 H65 L86 86 H14Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="35" y1="26" x2="65" y2="26" stroke="${stroke}" stroke-width="1.6"/>`;
+    case 30: // Chân váy xếp ly - Xanh biển
+      return `<path d="M35 18 H65 L86 86 H14Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M40 26 L26 86 M47 26 L40 86 M53 26 L60 86 M60 26 L74 86" stroke="${stroke}" stroke-width="1.5"/>`;
+    case 31: // Đầm hoa nhí - Hồng san hô
+      return `<path d="M38 14 L50 23 L62 14 L66 40 L86 88 H14 L34 40Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="38" cy="54" r="3" fill="#fef08a"/><circle cx="62" cy="58" r="3" fill="#fef08a"/><circle cx="48" cy="72" r="3" fill="#ffffff"/><circle cx="66" cy="76" r="3" fill="#fef08a"/>`;
+    case 32: // Đầm suông - Xanh ngọc
+      return `<path d="M38 14 L50 23 L62 14 L67 42 L74 88 H26 L33 42Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+    case 33: // Đầm maxi - Tím
+      return `<path d="M39 14 L50 22 L61 14 L65 40 L90 91 H10 L35 40Z" fill="${c}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M35 40 Q50 46 65 40" fill="none" stroke="${accent}" stroke-width="2"/>`;
+    default:
+      return `<circle cx="50" cy="50" r="30" fill="${c}" stroke="${stroke}" stroke-width="2"/>`;
+  }
+}
+
+function makeImgSrc(p){
+  const label=String(p.n).replace(/[<>&"]/g,"");
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="750" viewBox="0 0 100 125">
+    <rect width="100" height="125" fill="#e8e6e1"/>
+    <g transform="translate(0,4)">${artInner(p)}</g>
+    <text x="50" y="114" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="6.2" font-weight="700" fill="#17181a">${label}</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(svg);
+}
+
+const imgTag=(p,alt)=>`<img src="${makeImgSrc(p)}" alt="${esc(alt||p.n)}" loading="lazy">`;
 
 const money=n=>n.toLocaleString("vi-VN")+"₫",price=p=>p.s?Math.round(p.p*.9):p.p;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -57,7 +192,7 @@ const $=id=>document.getElementById(id);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cat="Tất cả",cart=store.get("lm_cart",[]),user=store.get("lm_user",null),pend=false;
 
-$("heroImg").onerror=function(){this.onerror=null;this.src=fallbackSvg("An Yen Thu Dong","#d92d20")};
+$("heroImg").src=makeImgSrc({id:19,n:"Áo khoác dạ",c:"#9a3412"});
 $("chips").innerHTML=["Tất cả","Áo","Áo khoác","Quần","Váy & Đầm","Sale"].map(c=>`<button class="chip" data-c="${c}" style="margin-right:6px">${c}</button>`).join("");
 $("chips").onclick=e=>{const c=e.target.dataset.c;if(c){cat=c;render()}};
 $("q").oninput=render;$("sort").onchange=render;
