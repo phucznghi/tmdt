@@ -1,0 +1,49 @@
+import {$,api,esc,money,date,statusLabels,orderHtml,busy} from '/shared.js';
+let tab='orders',records=[],editing=null,timer;
+const titles={orders:['Đơn hàng & vận chuyển','Theo dõi đơn hàng, thanh toán và quá trình giao nhận.'],products:['Sản phẩm & tồn kho','Quản lý danh mục và số lượng theo từng màu, từng size.'],customers:['Khách hàng','Xem thông tin khách hàng và lịch sử mua sắm.']};
+function toast(message,error=false){$('toast').textContent=message;$('toast').className=error?'error':'';clearTimeout(timer);timer=setTimeout(()=>$('toast').className='hidden',6000);}
+const error=e=>toast(e.message,true);
+const stat=(label,value)=>`<div class="stat"><small>${label}</small><strong>${value}</strong></div>`;
+async function load(){const requested=tab;const result=await api('/admin/'+requested);if(requested!==tab)return;records=result;render();}
+function render(){
+ const q=$('search').value.toLocaleLowerCase('vi'),filter=$('status-filter').value;
+ const data=records.filter(r=>JSON.stringify(tab==='orders'?[r.id,r.receiver,r.customer_email,r.tracking]:[r.name,r.email,r.category]).toLocaleLowerCase('vi').includes(q)).filter(r=>!filter||(tab==='orders'?r.status===filter:String(Number(r.active))===filter));
+ if(tab==='orders'){
+  $('stats').innerHTML=stat('Tổng đơn hàng',records.length)+stat('Chờ xác nhận',records.filter(r=>r.status==='pending').length)+stat('Đang giao',records.filter(r=>r.status==='shipping').length)+stat('Đã thu tiền (sau hoàn)',money(records.filter(r=>['paid','refund_pending'].includes(r.payment_status)).reduce((s,o)=>s+o.total,0)));
+  $('content').innerHTML=data.map(o=>`<article class="order" data-order="${o.id}">${orderHtml(o,true)}
+  ${o.next.length?`<form class="order-actions status-form"><label>Trạng thái tiếp theo<select name="status">${o.next.map(s=>`<option value="${s}">${statusLabels[s]}</option>`).join('')}</select></label><label>Đơn vị vận chuyển<input name="carrier" value="${esc(o.carrier)}" placeholder="VD: GHN" maxlength="100"></label><label>Mã vận đơn<input name="tracking" value="${esc(o.tracking)}" placeholder="Mã từ đơn vị vận chuyển" maxlength="100"></label><label>Ghi chú<input name="note" placeholder="Ghi chú xử lý" maxlength="500"></label><button>Cập nhật trạng thái</button></form>`:''}
+  ${o.payment_status==='refund_pending'||(o.payment_status==='unpaid'&&o.status!=='cancelled'&&(o.method!=='cod'||o.status==='delivered'))?`<form class="order-actions payment-form"><label>${o.payment_status==='refund_pending'?'Biên nhận hoàn tiền':'Mã giao dịch / biên nhận thu tiền'}<input name="reference" required minlength="3" maxlength="150" placeholder="Mã chứng từ đối soát"></label><button data-payment="${o.payment_status==='refund_pending'?'refunded':'paid'}">${o.payment_status==='refund_pending'?'Xác nhận đã hoàn tiền':'Xác nhận đã nhận tiền'}</button></form>`:''}</article>`).join('')||'<div class="panel empty">Chưa có đơn hàng phù hợp.</div>';
+ } else if(tab==='products'){
+  $('stats').innerHTML=stat('Sản phẩm',records.length)+stat('Đang bán',records.filter(p=>p.active).length)+stat('Tồn kho đang bán',records.filter(p=>p.active).flatMap(p=>p.variants.filter(v=>v.active)).reduce((s,v)=>s+v.stock,0))+stat('Biến thể sắp hết (≤ 5)',records.filter(p=>p.active).flatMap(p=>p.variants.filter(v=>v.active&&v.stock<=5)).length);
+  $('content').innerHTML=`<div class="panel table-wrap"><table><thead><tr><th>Sản phẩm</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>${data.map(p=>`<tr><td><div class="row"><img src="${esc(p.colors[0]?.img||'')}" alt=""><div><strong>${esc(p.name)}</strong><p>${esc(p.category)} · ${esc(p.audience)}</p></div></div></td><td>${money(p.price)}</td><td>${p.variants.filter(v=>v.active).reduce((s,v)=>s+v.stock,0)}</td><td><span class="badge">${p.active?'Đang bán':'Đã ẩn'}</span></td><td><button class="secondary small" data-edit="${p.id}">Chỉnh sửa</button></td></tr>`).join('')}</tbody></table>${!data.length?'<p class="empty">Chưa có sản phẩm phù hợp.</p>':''}</div>`;
+ } else {
+  $('stats').innerHTML=stat('Khách hàng',records.length)+stat('Đang hoạt động',records.filter(c=>c.active).length)+stat('Đã có đơn',records.filter(c=>c.order_count>0).length)+stat('Đã thu tiền',money(records.reduce((s,c)=>s+c.spent,0)));
+  $('content').innerHTML=`<div class="panel table-wrap"><table><thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Đơn hàng</th><th>Đã thanh toán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>${data.map(c=>`<tr><td><strong>${esc(c.name)}</strong><p>Tham gia ${date(c.created_at)}</p></td><td>${esc(c.email)}<p>${esc(c.phone||'Chưa có số điện thoại')}</p><p>${esc(c.address)}</p></td><td>${c.order_count}</td><td>${money(c.spent)}</td><td><span class="badge">${c.active?'Hoạt động':'Đã khóa'}</span></td><td><button class="${c.active?'danger':'secondary'} small" data-customer="${c.id}">${c.active?'Khóa':'Mở khóa'}</button></td></tr>`).join('')}</tbody></table>${!data.length?'<p class="empty">Chưa có khách hàng phù hợp.</p>':''}</div>`;
+ }
+}
+function setTab(next){tab=next;records=[];$('search').value='';$('title').textContent=titles[tab][0];$('subtitle').textContent=titles[tab][1];document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$('new-product').classList.toggle('hidden',tab!=='products');$('status-filter').innerHTML='<option value="">Tất cả trạng thái</option>'+(tab==='orders'?Object.entries(statusLabels).map(([s,l])=>`<option value="${s}">${l}</option>`).join(''):'<option value="1">Đang hoạt động / đang bán</option><option value="0">Đã khóa / đã ẩn</option>');$('content').textContent='Đang tải…';load().catch(error);}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('search').oninput=render;$('status-filter').onchange=render;$('refresh').onclick=()=>busy($('refresh'),load,error);
+$('logout').onclick=()=>busy($('logout'),async()=>{await api('/auth/logout','POST',{});location.href='/account';},error);
+$('content').addEventListener('submit',e=>{
+ e.preventDefault();const f=e.target,id=f.closest('[data-order]').dataset.order,values=Object.fromEntries(new FormData(f));const button=f.querySelector('button');
+ busy(button,async()=>{
+  if(f.classList.contains('status-form')) {if(values.status==='cancelled'&&!confirm('Hủy đơn hàng và hoàn lại tồn kho?'))return;await api(`/admin/orders/${id}/status`,'PATCH',values);}
+  else {if(!confirm('Bạn đã đối soát tiền thực nhận / hoàn tiền với chứng từ này?'))return;await api(`/admin/orders/${id}/payment`,'PATCH',{reference:values.reference,status:button.dataset.payment});}
+  await load();toast('Đã lưu cập nhật.');
+ },error);
+});
+$('content').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-edit]');if(edit)openEditor(records.find(p=>p.id===Number(edit.dataset.edit)));
+ const c=e.target.closest('[data-customer]');if(c)busy(c,async()=>{const customer=records.find(r=>r.id===Number(c.dataset.customer));if(!confirm(`${customer.active?'Khóa':'Mở khóa'} tài khoản ${customer.email}?`))return;await api('/admin/customers/'+customer.id,'PATCH',{active:!customer.active});await load();toast('Đã cập nhật tài khoản.');},error);
+});
+function addVariant(v={}){
+ const row=document.createElement('div');row.className='variant-row';row.innerHTML=`<label>Màu<input data-field="color" value="${esc(v.color||'Xanh Rừng')}" required maxlength="60"></label><label>Size<input data-field="size" value="${esc(v.size||'M')}" required maxlength="20"></label><label>Mã màu<input data-field="hex" type="color" value="${esc(v.hex||'#1b4332')}"></label><label>Ảnh HTTPS<input data-field="img" type="url" value="${esc(v.img||'')}" required></label><label>Tồn kho<input data-field="stock" type="number" min="0" max="100000" value="${v.stock??20}" required></label><button type="button" class="danger" aria-label="Xóa biến thể">×</button>`;row.querySelector('button').onclick=()=>row.remove();$('variants').append(row);
+}
+function openEditor(p=null){editing=p;$('editor-title').textContent=p?'Chỉnh sửa sản phẩm':'Thêm sản phẩm';const f=$('product-form');f.reset();for(const name of ['name','category','audience','badge','price','originalPrice','fabric'])if(p)f.elements[name].value=p[name];f.elements.active.checked=p?p.active:true;f.elements.flashSale.checked=!!p?.flashSale;$('variants').innerHTML='';if(p)p.variants.filter(v=>v.active).forEach(addVariant);else addVariant();$('product-dialog').showModal();}
+$('new-product').onclick=()=>openEditor();$('close-editor').onclick=()=>$('product-dialog').close();$('add-variant').onclick=()=>addVariant();
+$('product-form').onsubmit=e=>{e.preventDefault();const f=e.target;busy(f.querySelector('[type=submit]'),async()=>{
+ const b=Object.fromEntries(new FormData(f));for(const n of ['price','originalPrice'])b[n]=Number(b[n]);b.active=f.elements.active.checked;b.flashSale=f.elements.flashSale.checked;b.version=editing?.version;
+ b.variants=[...$('variants').children].map(row=>Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.dataset.field==='stock'?Number(i.value):i.value])));
+ await api('/admin/products'+(editing?'/'+editing.id:''),editing?'PUT':'POST',b);$('product-dialog').close();await load();toast('Đã lưu sản phẩm.');
+ },error);};
+try{const me=await api('/me');if(me.user?.role!=='admin'){$('workspace').classList.add('hidden');$('access').classList.remove('hidden');$('access').innerHTML='<div class="panel"><h1>Cần tài khoản quản trị</h1><p>Đăng nhập bằng tài khoản admin để quản lý cửa hàng.</p><a href="/account?admin=1">Đến trang đăng nhập</a></div>';$('logout').classList.toggle('hidden',!me.user);}else{$('identity').textContent=me.user.name;setTab('orders');}}catch(e){error(e);}

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MỘC VẢI (VERDANT) | Thời Trang Ứng Dụng Cho Mọi Nhà</title>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        forest: {
+                            DEFAULT: '#1B4332',
+                            light: '#2D6A4F',
+                            dark: '#122E22',
+                            50: '#F0F7F4',
+                        },
+                        amberbrand: {
+                            DEFAULT: '#D97706',
+                            light: '#F59E0B',
+                            dark: '#B45309',
+                            50: '#FFFBEB',
+                        },
+                        cream: {
+                            DEFAULT: '#FAF9F6',
+                            dark: '#F1EFE9',
+                            border: '#E6E2D8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF9F6;
+            color: #1F2937;
+            overflow-x: hidden;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.97) translateY(6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal {
+            animation: fadeInScale 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-forest selection:text-white">
+
+    <!-- ==================== 1. STICKY 3-PART HEADER (NO TOP PROMO BAR) ==================== -->
+    <header id="main-header" class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-cream-border shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-3 items-center h-16 sm:h-20 gap-2">
+                
+                <!-- Left: Pill Button "≡ Danh mục" -->
+                <div class="flex items-center justify-start">
+                    <button id="mega-menu-toggle" type="button" class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-cream hover:bg-forest-50 border border-cream-border hover:border-forest/30 text-gray-800 hover:text-forest font-semibold text-xs sm:text-sm transition cursor-pointer select-none">
+                        <svg id="menu-icon-bars" class="w-4 h-4 text-forest" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <svg id="menu-icon-close" class="w-4 h-4 text-amberbrand hidden" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <span>Danh mục</span>
+                    </button>
+                </div>
+
+                <!-- Center: Brand Logo MỘC VẢI -->
+                <div class="flex items-center justify-center">
+                    <a href="#top" id="brand-logo-btn" class="inline-flex items-center gap-2 group">
+                        <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-forest text-white flex items-center justify-center shadow-sm group-hover:bg-forest-light transition">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </span>
+                        <span class="flex flex-col text-left">
+                            <span class="font-display font-extrabold text-lg sm:text-2xl tracking-tight text-forest leading-none">
+                                MỘC <span class="text-amberbrand">VẢI</span>
+                            </span>
+                            <span class="hidden sm:block text-[9px] font-bold tracking-[0.24em] text-gray-500 uppercase mt-0.5">VERDANT</span>
+                        </span>
+                    </a>
+                </div>
+
+                <!-- Right: Search + Shopping Bag + Account/Login -->
+                <div class="flex items-center justify-end gap-1.5 sm:gap-2.5">
+                    <!-- Desktop Rounded Search Input -->
+                    <div class="hidden md:block relative w-44 lg:w-64">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input id="desktop-search-input" type="text" placeholder="Tìm kiếm sản phẩm..." class="w-full pl-9 pr-8 py-2 rounded-full bg-cream border border-cream-border focus:border-forest focus:bg-white text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/15 transition">
+                        <button id="clear-search-btn" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xs p-0.5" title="Xóa tìm kiếm">✕</button>
+                    </div>
+
+                    <!-- Mobile Search Toggle Button -->
+                    <button id="mobile-search-toggle" type="button" class="md:hidden w-9 h-9 rounded-full bg-cream border border-cream-border flex items-center justify-center text-gray-700 hover:text-forest transition" aria-label="Tìm kiếm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                        </svg>
+                    </button>
+
+                    <!-- Shopping Cart Button -->
+                    <button id="open-cart-btn" type="button" class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full hover:bg-forest-50 flex items-center justify-center text-gray-800 hover:text-forest transition cursor-pointer" title="Giỏ hàng">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                        <span id="header-cart-count" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-amberbrand text-white text-[10px] font-bold flex items-center justify-center shadow-xs">0</span>
+                    </button>
+
+                    <!-- Login / Account Button & Dropdown -->
+                    <div class="relative">
+                        <button id="header-account-btn" type="button" class="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full hover:bg-forest-50 text-gray-800 hover:text-forest transition cursor-pointer">
+                            <span class="relative w-7 h-7 rounded-full border border-gray-300 bg-cream flex items-center justify-center text-gray-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span id="user-online-indicator" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+                            </span>
+                            <span id="header-account-text" class="hidden sm:inline text-xs sm:text-sm font-semibold max-w-[100px] truncate">Đăng nhập</span>
+                        </button>
+
+                        <!-- Logged-In User Dropdown -->
+                        <div id="user-profile-dropdown" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-cream-border overflow-hidden z-50 animate-modal">
+                            <div class="p-4 bg-forest text-white">
+                                <p id="dropdown-user-name" class="font-display font-bold text-sm truncate">Thành viên Mộc Vải</p>
+                                <p id="dropdown-user-email" class="text-[11px] text-cream/80 truncate mt-0.5">member@mocvai.vn</p>
+                            </div>
+                            <div class="p-1.5 text-xs font-semibold text-gray-700 space-y-0.5">
+                                <button type="button" data-portal-tab="profile" class="portal-open-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-forest-50 hover:text-forest transition text-left">
+                                    <span>👤</span><span>Thông tin tài khoản</span>
+                                </button>
+                                <button type="button" data-portal-tab="orders" class="portal-open-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-forest-50 hover:text-forest transition text-left">
+                                    <span class="flex items-center gap-2.5"><span>📦</span><span>Đơn hàng của tôi</span></span>
+                                    <span id="dropdown-orders-badge" class="px-1.5 py-0.5 rounded-full bg-amberbrand-50 text-amberbrand text-[10px] font-bold">0</span>
+                                </button>
+                                <div class="border-t border-cream-border my-1"></div>
+                                <button id="logout-btn" type="button" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-red-50 text-red-600 transition text-left">
+                                    <span>🚪</span><span>Đăng xuất</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Search Input Row -->
+            <div id="mobile-search-wrapper" class="hidden md:hidden pb-3">
+                <input id="mobile-search-input" type="text" placeholder="Tìm áo polo, áo khoác, quần jeans..." class="w-full px-4 py-2 rounded-full bg-cream border border-cream-border focus:border-forest text-sm focus:outline-none focus:bg-white">
+            </div>
+        </div>
+
+        <!-- ==================== 2. FULL-WIDTH MEGA MENU ==================== -->
+        <div id="mega-menu-dropdown" class="hidden absolute left-0 right-0 top-full bg-white border-b border-cream-border shadow-2xl z-50 max-h-[calc(100vh-5rem)] overflow-y-auto animate-modal">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                
+                <!-- Quick Pills Row -->
+                <div class="flex items-center justify-start lg:justify-center gap-2.5 overflow-x-auto pb-5 mb-6 border-b border-cream-border no-scrollbar">
+                    <button type="button" data-quick-filter="connect" class="mega-pill shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-forest-50 border border-cream-border text-xs font-extrabold text-forest uppercase tracking-wide transition">
+                        <span class="w-2 h-2 rounded-full bg-amberbrand"></span>
+                        <span>BST WEAR TO CONNECT</span>
+                    </button>
+                    <button type="button" data-info-modal="stores" class="mega-info-btn shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-forest-50 border border-cream-border text-xs font-extrabold text-gray-800 hover:text-forest uppercase tracking-wide transition">
+                        <span>📍 CỬA HÀNG</span>
+                    </button>
+                    <button type="button" data-info-modal="news" class="mega-info-btn shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-forest-50 border border-cream-border text-xs font-extrabold text-gray-800 hover:text-forest uppercase tracking-wide transition">
+                        <span>📰 TIN TỨC</span>
+                    </button>
+                    <button type="button" data-quick-filter="new" class="mega-pill shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-forest-50 border border-cream-border text-xs font-extrabold text-gray-800 hover:text-forest uppercase tracking-wide transition">
+                        <span>✨ MỚI VỀ</span>
+                    </button>
+                    <button type="button" data-quick-filter="sale" class="mega-pill shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-amberbrand-50 border border-cream-border text-xs font-extrabold text-gray-800 hover:text-amberbrand uppercase tracking-wide transition">
+                        <span>🏷️ ƯU ĐÃI</span>
+                        <span class="px-2 py-0.5 rounded bg-amberbrand text-white text-[10px] font-extrabold">SALE SỐC</span>
+                    </button>
+                    <button type="button" data-info-modal="uniform" class="mega-info-btn shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cream hover:bg-forest-50 border border-cream-border text-xs font-extrabold text-gray-800 hover:text-forest uppercase tracking-wide transition">
+                        <span>👔 ĐỒNG PHỤC</span>
+                    </button>
+                </div>
+
+                <!-- 4-Column Mega Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Col 1: NAM -->
+                    <div>
+                        <button type="button" data-audience="Nam" data-category="all" class="mega-cat-link flex items-center gap-1.5 font-display font-extrabold text-base text-forest hover:text-amberbrand mb-4 transition">
+                            <span>NAM</span><span>↗</span>
+                        </button>
+                        <div class="space-y-2.5">
+                            <button type="button" data-audience="Nam" data-category="Áo Polo" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=120&q=80" alt="Áo Polo Nam" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Polo Sợi Cafe</span>
+                            </button>
+                            <button type="button" data-audience="Nam" data-category="Áo Khoác" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=120&q=80" alt="Áo Khoác Nam" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Khoác Gió 3C</span>
+                            </button>
+                            <button type="button" data-audience="Nam" data-category="Quần Jeans" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=120&q=80" alt="Quần Jeans Nam" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Quần Jeans Co Giãn</span>
+                            </button>
+                            <button type="button" data-audience="Nam" data-category="Đồ Thể Thao" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=120&q=80" alt="Đồ Thể Thao Nam" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Đồ Thể Thao Airycool</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Col 2: NỮ -->
+                    <div>
+                        <button type="button" data-audience="Nữ" data-category="all" class="mega-cat-link flex items-center gap-1.5 font-display font-extrabold text-base text-forest hover:text-amberbrand mb-4 transition">
+                            <span>NỮ</span><span>↗</span>
+                        </button>
+                        <div class="space-y-2.5">
+                            <button type="button" data-audience="Nữ" data-category="Áo Polo" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=120&q=80" alt="Áo Polo Nữ" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Polo & Áo Kiểu Nữ</span>
+                            </button>
+                            <button type="button" data-audience="Nữ" data-category="Áo Khoác" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=120&q=80" alt="Áo Khoác Nữ" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Khoác & Giữ Nhiệt</span>
+                            </button>
+                            <button type="button" data-audience="Nữ" data-category="Quần Jeans" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=120&q=80" alt="Quần Jeans Nữ" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Quần Jeans & Chân Váy</span>
+                            </button>
+                            <button type="button" data-audience="Nữ" data-category="Đồ Thể Thao" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=120&q=80" alt="Đồ Thể Thao Nữ" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Đồ Thể Thao Bamboo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Col 3: TRẺ EM -->
+                    <div>
+                        <button type="button" data-audience="Trẻ em" data-category="all" class="mega-cat-link flex items-center gap-1.5 font-display font-extrabold text-base text-forest hover:text-amberbrand mb-4 transition">
+                            <span>TRẺ EM</span><span>↗</span>
+                        </button>
+                        <div class="space-y-2.5">
+                            <button type="button" data-audience="Trẻ em" data-category="Áo Polo" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=120&q=80" alt="Áo Polo Trẻ Em" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Polo & Thun Bé</span>
+                            </button>
+                            <button type="button" data-audience="Trẻ em" data-category="Áo Khoác" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=120&q=80" alt="Áo Khoác Trẻ Em" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Áo Khoác Gió Bé</span>
+                            </button>
+                            <button type="button" data-audience="Trẻ em" data-category="Đồ Thể Thao" class="mega-cat-link w-full flex items-center gap-3 p-2 rounded-xl hover:bg-cream transition text-left group">
+                                <img src="https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=120&q=80" alt="Đồ Bộ Trẻ Em" class="w-10 h-10 rounded-full object-cover bg-cream-dark shrink-0" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-forest group-hover:font-semibold">Đồ Bộ Năng Động</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Col 4: BỘ SƯU TẬP -->
+                    <div>
+                        <p class="font-display font-extrabold text-base text-forest mb-4">BỘ SƯU TẬP</p>
+                        <div class="space-y-3">
+                            <button type="button" data-quick-filter="connect" class="mega-pill group block w-full text-left rounded-2xl overflow-hidden border border-cream-border hover:border-forest transition">
+                                <div class="relative h-24 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=500&q=80" alt="BST Wear To Connect" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-forest/80 via-forest/20 to-transparent"></div>
+                                    <span class="absolute bottom-2 left-3 text-xs font-bold text-white">BST Wear To Connect</span>
+                                </div>
+                            </button>
+                            <button type="button" data-audience="all" data-category="Áo Khoác" class="mega-cat-link group block w-full text-left rounded-2xl overflow-hidden border border-cream-border hover:border-forest transition">
+                                <div class="relative h-24 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=500&q=80" alt="BST Áo Gió Đa Năng" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-forest/80 via-forest/20 to-transparent"></div>
+                                    <span class="absolute bottom-2 left-3 text-xs font-bold text-white">BST Áo Gió 3C Plus</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Backdrop when Mega Menu is open -->
+    <div id="mega-menu-backdrop" class="hidden fixed inset-0 bg-black/35 z-30"></div>
+
+    <!-- ==================== 3. HERO BANNER CAROUSEL ==================== -->
+    <section id="top" class="relative bg-forest overflow-hidden">
+        <div id="hero-carousel" class="relative w-full h-[360px] sm:h-[440px] lg:h-[500px]">
+            <!-- Slide 0 -->
+            <div class="hero-slide absolute inset-0 transition-opacity duration-500 opacity-100">
+                <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=85" alt="BST Thời Trang Ứng Dụng Mộc Vải" class="w-full h-full object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                <div class="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/70 to-transparent"></div>
+                <div class="absolute inset-0 max-w-7xl mx-auto px-6 sm:px-12 flex items-center">
+                    <div class="max-w-xl text-white space-y-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amberbrand text-white text-xs font-bold uppercase tracking-wider">
+                            🌿 Thời Trang Bền Vững
+                        </span>
+                        <h1 class="font-display font-extrabold text-3xl sm:text-5xl leading-tight">
+                            Mặc Xanh Sống Chất <br>
+                            <span class="text-amberbrand-light">Thoải Mái Mỗi Ngày</span>
+                        </h1>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">
+                            Công nghệ dệt Sợi Cafe khử mùi, Airycool làm mát tức thì & vải Bamboo mềm mịn dành cho cả gia đình Việt.
+                        </p>
+                        <div class="pt-2 flex flex-wrap gap-3">
+                            <a href="#flash-sale-section" class="px-6 py-3 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white font-bold text-sm shadow-lg transition">
+                                Săn Flash Sale -50%
+                            </a>
+                            <button type="button" data-filter-audience="all" class="hero-cta-btn px-6 py-3 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold text-sm border border-white/30 transition">
+                                Khám phá Bộ Sưu Tập
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 1 -->
+            <div class="hero-slide absolute inset-0 transition-opacity duration-500 opacity-0 pointer-events-none">
+                <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=1600&q=85" alt="Áo Khoác Gió Đa Năng" class="w-full h-full object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                <div class="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/70 to-transparent"></div>
+                <div class="absolute inset-0 max-w-7xl mx-auto px-6 sm:px-12 flex items-center">
+                    <div class="max-w-xl text-white space-y-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-forest text-xs font-extrabold uppercase tracking-wider">
+                            Công Nghệ 3C Plus
+                        </span>
+                        <h2 class="font-display font-extrabold text-3xl sm:text-5xl leading-tight">
+                            Áo Gió Đa Năng <br>
+                            <span class="text-amberbrand-light">Cản Gió • Trượt Nước</span>
+                        </h2>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">
+                            Trọng lượng siêu nhẹ chỉ 280g, chống tia UV UPF 50+ và túi gấp gọn thông minh cho mọi hành trình.
+                        </p>
+                        <div class="pt-2">
+                            <button type="button" data-filter-category="Áo Khoác" class="hero-cta-btn px-6 py-3 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white font-bold text-sm shadow-lg transition">
+                                Xem ngay BST Áo Khoác
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="hero-slide absolute inset-0 transition-opacity duration-500 opacity-0 pointer-events-none">
+                <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=85" alt="BST Công Sở Hiện Đại" class="w-full h-full object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
+                <div class="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/70 to-transparent"></div>
+                <div class="absolute inset-0 max-w-7xl mx-auto px-6 sm:px-12 flex items-center">
+                    <div class="max-w-xl text-white space-y-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amberbrand text-white text-xs font-bold uppercase tracking-wider">
+                            Ưu Đãi Thành Viên Mới
+                        </span>
+                        <h2 class="font-display font-extrabold text-3xl sm:text-5xl leading-tight">
+                            Nhập Mã <span class="text-amberbrand-light">WELCOME50</span> <br>
+                            Giảm Ngay 50.000đ
+                        </h2>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">
+                            Miễn phí vận chuyển toàn quốc cho đơn hàng từ 498.000đ. Đổi trả tận nơi miễn phí trong 15 ngày.
+                        </p>
+                        <div class="pt-2">
+                            <button type="button" data-filter-category="Áo Polo" class="hero-cta-btn px-6 py-3 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white font-bold text-sm shadow-lg transition">
+                                Mua sắm Áo Polo ngay
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Left / Right Controls -->
+            <button id="hero-prev-btn" type="button" class="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-forest shadow-md flex items-center justify-center transition z-10 cursor-pointer" aria-label="Banner trước">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button id="hero-next-btn" type="button" class="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-forest shadow-md flex items-center justify-center transition z-10 cursor-pointer" aria-label="Banner tiếp theo">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            <!-- Dot Indicators -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+                <button type="button" data-slide-dot="0" class="hero-dot w-6 h-2 rounded-full bg-amberbrand transition-all" aria-label="Slide 1"></button>
+                <button type="button" data-slide-dot="1" class="hero-dot w-2 h-2 rounded-full bg-white/60 hover:bg-white transition-all" aria-label="Slide 2"></button>
+                <button type="button" data-slide-dot="2" class="hero-dot w-2 h-2 rounded-full bg-white/60 hover:bg-white transition-all" aria-label="Slide 3"></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== 4. F⚡ASH SALE SECTION ==================== -->
+    <section id="flash-sale-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+        <div class="rounded-2xl overflow-hidden border border-cream-border shadow-md bg-white">
+            <!-- Top Header Bar -->
+            <div class="bg-gradient-to-r from-forest via-forest-light to-forest px-5 sm:px-7 py-4 flex flex-wrap items-center justify-between gap-4 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="font-display font-extrabold text-2xl sm:text-3xl tracking-tight flex items-center italic">
+                        <span>F</span>
+                        <span class="text-amberbrand-light mx-0.5 not-italic">⚡</span>
+                        <span>ASH <span class="text-amberbrand-light ml-1.5">SALE</span></span>
+                    </div>
+                    <span class="hidden md:inline-block px-3 py-1 rounded-full bg-white/15 text-xs font-semibold text-cream">
+                        Giá sốc mỗi ngày • Số lượng có hạn
+                    </span>
+                </div>
+
+                <!-- Live Countdown Timer -->
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xs sm:text-sm font-medium text-cream/90">Kết thúc sau:</span>
+                    <div class="flex items-center gap-1.5 font-display font-extrabold text-sm sm:text-base">
+                        <span id="fs-hours" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white text-forest flex items-center justify-center shadow-xs">02</span>
+                        <span class="text-amberbrand-light">:</span>
+                        <span id="fs-minutes" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white text-forest flex items-center justify-center shadow-xs">22</span>
+                        <span class="text-amberbrand-light">:</span>
+                        <span id="fs-seconds" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amberbrand text-white flex items-center justify-center shadow-xs">21</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5-Item Flash Sale Grid -->
+            <div class="p-4 sm:p-6 bg-cream/40">
+                <div id="flash-sale-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-5">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== 5. INTERACTIVE PRODUCT CATALOG & FILTER TABS ==================== -->
+    <main id="catalog-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Section Title & Sort -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-amberbrand">Bộ Sưu Tập Ứng Dụng</span>
+                <h2 class="font-display font-extrabold text-2xl sm:text-3xl text-forest mt-1">Sản Phẩm Nổi Bật</h2>
+            </div>
+
+            <div class="flex items-center gap-3 self-start sm:self-auto">
+                <span id="catalog-count-label" class="text-xs sm:text-sm text-gray-500 font-medium">Hiển thị 12 sản phẩm</span>
+                <select id="sort-select" class="px-3.5 py-2 rounded-xl bg-white border border-cream-border text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:border-forest cursor-pointer">
+                    <option value="featured">Nổi bật nhất</option>
+                    <option value="price-asc">Giá: Thấp đến Cao</option>
+                    <option value="price-desc">Giá: Cao đến Thấp</option>
+                    <option value="bestseller">Bán chạy nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Category & Audience Filter Pills -->
+        <div id="filter-pills-bar" class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
+            <button type="button" data-filter-type="all" data-filter-val="all" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-forest text-white shadow-xs transition cursor-pointer">Tất cả</button>
+            <button type="button" data-filter-type="audience" data-filter-val="Nam" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Nam</button>
+            <button type="button" data-filter-type="audience" data-filter-val="Nữ" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Nữ</button>
+            <button type="button" data-filter-type="audience" data-filter-val="Trẻ em" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Trẻ em</button>
+            <button type="button" data-filter-type="category" data-filter-val="Áo Polo" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Áo Polo</button>
+            <button type="button" data-filter-type="category" data-filter-val="Áo Khoác" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Áo Khoác</button>
+            <button type="button" data-filter-type="category" data-filter-val="Quần Jeans" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Quần Jeans</button>
+            <button type="button" data-filter-type="category" data-filter-val="Đồ Thể Thao" class="filter-pill shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-gray-700 border border-cream-border hover:border-forest transition cursor-pointer">Đồ Thể Thao</button>
+        </div>
+
+        <!-- 4-Column Responsive Product Grid -->
+        <div id="product-catalog-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Empty Search/Filter State -->
+        <div id="empty-catalog-state" class="hidden py-16 text-center bg-white rounded-3xl border border-cream-border mt-4">
+            <div class="w-16 h-16 mx-auto rounded-full bg-cream flex items-center justify-center text-2xl mb-3">🔍</div>
+            <h3 class="font-display font-bold text-lg text-gray-800">Không tìm thấy sản phẩm phù hợp</h3>
+            <p class="text-sm text-gray-500 mt-1 mb-5">Thử tìm kiếm với từ khóa khác hoặc đặt lại bộ lọc danh mục.</p>
+            <button id="reset-filters-btn" type="button" class="px-6 py-2.5 rounded-full bg-forest hover:bg-forest-light text-white text-sm font-bold transition">
+                Xem tất cả sản phẩm
+            </button>
+        </div>
+    </main>
+
+    <!-- ==================== 6. PRODUCT QUICK-VIEW & SIZE GUIDE MODAL ==================== -->
+    <div id="quickview-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
+        <div class="relative bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-cream-border animate-modal">
+            <button id="close-quickview-btn" type="button" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-cream border border-cream-border text-gray-700 flex items-center justify-center transition cursor-pointer" aria-label="Đóng">✕</button>
+            <div id="quickview-body" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 sm:p-8">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 7. MINIMALIST YODY-STYLE LOGIN / REGISTER MODAL ==================== -->
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
+        <div class="relative bg-white rounded-3xl max-w-[430px] w-full p-6 sm:p-8 shadow-2xl border border-cream-border animate-modal">
+            <!-- Circular Close Button Top-Right -->
+            <button id="close-auth-btn" type="button" class="absolute top-4 right-4 w-9 h-9 rounded-full border border-gray-200 hover:bg-cream text-gray-600 flex items-center justify-center transition cursor-pointer" aria-label="Đóng">✕</button>
+
+            <!-- Centered MỘC VẢI Logo -->
+            <div class="flex items-center justify-center gap-2 mt-1 mb-5">
+                <span class="w-8 h-8 rounded-xl bg-forest text-white flex items-center justify-center">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </span>
+                <span class="font-display font-extrabold text-2xl tracking-tight text-forest">
+                    MỘC <span class="text-amberbrand">VẢI</span>
+                </span>
+            </div>
+
+            <!-- Step 1: Email Entry -->
+            <div id="auth-step-1" class="space-y-4">
+                <h3 class="font-display font-bold text-xl sm:text-2xl text-gray-900 text-center">Đăng nhập / Đăng ký</h3>
+                <form id="auth-email-form" class="space-y-3.5 pt-1">
+                    <input id="auth-email-input" type="email" required placeholder="Nhập địa chỉ email của bạn" class="w-full px-4 py-3.5 rounded-full bg-white border border-gray-300 focus:border-forest text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/15 transition">
+                    <button id="auth-continue-btn" type="submit" disabled class="w-full py-3.5 rounded-full bg-gray-100 text-gray-400 font-bold text-sm flex items-center justify-center gap-2 transition cursor-not-allowed">
+                        <span>Tiếp tục</span><span>→</span>
+                    </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="relative flex py-1.5 items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink mx-3 text-xs text-gray-500 font-medium">Hoặc</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <!-- Blue Google 1-Click Demo Login -->
+                <button id="google-login-btn" type="button" class="w-full py-2.5 px-4 rounded-full bg-[#4285F4] hover:bg-[#3367D6] text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-3 cursor-pointer">
+                    <span class="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                            <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                        </svg>
+                    </span>
+                    <span>Tiếp tục với Google</span>
+                </button>
+            </div>
+
+            <!-- Step 2: Name & Password Confirmation -->
+            <div id="auth-step-2" class="hidden space-y-4">
+                <div class="text-center">
+                    <h3 class="font-display font-bold text-xl text-gray-900">Xác nhận tài khoản</h3>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Email: <strong id="auth-confirmed-email" class="text-forest"></strong>
+                        <button id="auth-back-btn" type="button" class="text-amberbrand font-semibold hover:underline ml-1.5">Đổi email</button>
+                    </p>
+                </div>
+                <form id="auth-complete-form" class="space-y-3.5">
+                    <input id="auth-name-input" type="text" required placeholder="Họ và tên của bạn" class="w-full px-4 py-3 rounded-full bg-cream border border-cream-border focus:border-forest text-sm focus:outline-none focus:bg-white">
+                    <input id="auth-pass-input" type="password" required minlength="4" placeholder="Mật khẩu (tối thiểu 4 ký tự)" class="w-full px-4 py-3 rounded-full bg-cream border border-cream-border focus:border-forest text-sm focus:outline-none focus:bg-white">
+                    <button type="submit" class="w-full py-3.5 rounded-full bg-forest hover:bg-forest-light text-white font-bold text-sm shadow-md transition cursor-pointer">
+                        Hoàn tất đăng nhập
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MEMBER PORTAL MODAL (ACCOUNT & MY ORDERS) ==================== -->
+    <div id="member-portal-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
+        <div class="relative bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] overflow-y-auto shadow-2xl border border-cream-border p-6 sm:p-8 animate-modal">
+            <button id="close-portal-btn" type="button" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-cream hover:bg-cream-dark text-gray-700 flex items-center justify-center transition cursor-pointer">✕</button>
+            
+            <div class="flex items-center gap-3 pb-4 border-b border-cream-border">
+                <div class="w-12 h-12 rounded-2xl bg-forest text-white font-display font-extrabold flex items-center justify-center text-lg">MV</div>
+                <div>
+                    <h3 id="portal-user-name" class="font-display font-extrabold text-lg text-forest">Thành viên Mộc Vải</h3>
+                    <p id="portal-user-email" class="text-xs text-gray-500">member@mocvai.vn</p>
+                </div>
+            </div>
+
+            <!-- Portal Tabs -->
+            <div class="flex gap-2 my-4">
+                <button type="button" data-portal-switch="profile" class="portal-tab-btn px-4 py-2 rounded-full text-xs font-bold bg-forest text-white transition">Thông tin tài khoản</button>
+                <button type="button" data-portal-switch="orders" class="portal-tab-btn px-4 py-2 rounded-full text-xs font-bold bg-cream text-gray-700 transition">Đơn hàng của tôi</button>
+            </div>
+
+            <!-- Tab Content: Profile -->
+            <div id="portal-tab-profile" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-cream/60 p-4 rounded-2xl border border-cream-border text-sm">
+                    <div>
+                        <span class="text-xs text-gray-500 block">Hạng thành viên</span>
+                        <strong class="text-forest">🌿 Thành viên Xanh (Green Member)</strong>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 block">Mã ưu đãi độc quyền</span>
+                        <strong class="text-amberbrand">WELCOME50 (-50.000đ)</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Orders -->
+            <div id="portal-tab-orders" class="hidden space-y-3">
+                <div id="portal-orders-list" class="space-y-3">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== INFO MODAL (STORES / NEWS / UNIFORM) ==================== -->
+    <div id="info-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
+        <div class="relative bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-cream-border animate-modal">
+            <button id="close-info-btn" type="button" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-cream hover:bg-cream-dark text-gray-700 flex items-center justify-center transition cursor-pointer">✕</button>
+            <div id="info-modal-content"></div>
+        </div>
+    </div>
+
+    <!-- ==================== 8. SLIDE-OVER SHOPPING CART DRAWER ==================== -->
+    <div id="cart-backdrop" class="fixed inset-0 bg-black/45 z-50 hidden transition-opacity"></div>
+    <aside id="cart-drawer" class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-50 translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- Drawer Header -->
+        <div class="px-5 py-4 border-b border-cream-border flex items-center justify-between bg-cream/60">
+            <div class="flex items-center gap-2">
+                <span class="font-display font-extrabold text-lg text-forest">Giỏ Hàng</span>
+                <span id="drawer-cart-count" class="px-2 py-0.5 rounded-full bg-forest text-white text-xs font-bold">0</span>
+            </div>
+            <button id="close-cart-btn" type="button" class="w-8 h-8 rounded-full hover:bg-cream-dark text-gray-600 flex items-center justify-center transition cursor-pointer" aria-label="Đóng giỏ hàng">✕</button>
+        </div>
+
+        <!-- Free Shipping Progress Bar (498.000đ) -->
+        <div class="px-5 py-3 bg-forest-50 border-b border-cream-border">
+            <p id="shipping-progress-text" class="text-xs font-semibold text-forest mb-1.5">
+                Mua thêm <span class="text-amberbrand font-bold">498.000đ</span> để được <strong>Miễn phí vận chuyển</strong>
+            </p>
+            <div class="w-full h-2 rounded-full bg-white overflow-hidden border border-forest/15">
+                <div id="shipping-progress-bar" class="h-full bg-gradient-to-r from-forest to-amberbrand rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Cart Items & Checkout Area -->
+        <div id="cart-scroll-area" class="flex-1 overflow-y-auto p-5 space-y-4">
+            <!-- Cart Items List -->
+            <div id="cart-items-container" class="space-y-3"></div>
+
+            <!-- Empty Cart View -->
+            <div id="empty-cart-view" class="py-12 text-center">
+                <div class="w-16 h-16 mx-auto rounded-full bg-cream flex items-center justify-center text-2xl mb-3">🛍️</div>
+                <p class="font-display font-bold text-gray-800">Giỏ hàng của bạn đang trống</p>
+                <p class="text-xs text-gray-500 mt-1 mb-4">Khám phá ngay các thiết kế Sợi Cafe & Airycool mới nhất!</p>
+                <button id="continue-shopping-btn" type="button" class="px-5 py-2.5 rounded-full bg-forest text-white text-xs font-bold hover:bg-forest-light transition">Tiếp tục mua sắm</button>
+            </div>
+
+            <!-- Inline Checkout Form (Hidden until user clicks "Tiến hành đặt hàng") -->
+            <form id="checkout-form" class="hidden pt-3 border-t border-cream-border space-y-3">
+                <h4 class="font-display font-bold text-sm text-forest">Thông tin giao hàng</h4>
+                <input id="checkout-name" type="text" required placeholder="Họ và tên người nhận *" class="w-full px-3.5 py-2.5 rounded-xl bg-cream border border-cream-border text-xs sm:text-sm focus:outline-none focus:border-forest">
+                <input id="checkout-phone" type="tel" required placeholder="Số điện thoại nhận hàng *" class="w-full px-3.5 py-2.5 rounded-xl bg-cream border border-cream-border text-xs sm:text-sm focus:outline-none focus:border-forest">
+                <input id="checkout-address" type="text" required placeholder="Địa chỉ giao hàng chi tiết *" class="w-full px-3.5 py-2.5 rounded-xl bg-cream border border-cream-border text-xs sm:text-sm focus:outline-none focus:border-forest">
+                <button type="submit" class="w-full py-3 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white font-bold text-sm shadow-md transition cursor-pointer">
+                    Xác Nhận Đặt Hàng
+                </button>
+            </form>
+
+            <!-- Order Confirmation View -->
+            <div id="order-success-view" class="hidden py-8 px-4 text-center bg-forest-50 rounded-2xl border border-forest/20 space-y-3">
+                <div class="w-14 h-14 mx-auto rounded-full bg-forest text-white flex items-center justify-center text-2xl">✓</div>
+                <h4 class="font-display font-extrabold text-lg text-forest">Đặt Hàng Thành Công!</h4>
+                <p id="order-success-code" class="text-xs font-bold text-amberbrand uppercase tracking-wider">Mã đơn: #MV2026</p>
+                <p class="text-xs text-gray-600 leading-relaxed">Cảm ơn bạn đã tin chọn thời trang bền vững MỘC VẢI. Đơn hàng đã được lưu vào mục <strong>Đơn hàng của tôi</strong>.</p>
+                <button id="new-shopping-btn" type="button" class="px-5 py-2.5 rounded-full bg-forest text-white text-xs font-bold hover:bg-forest-light transition">Tiếp tục mua sắm</button>
+            </div>
+        </div>
+
+        <!-- Drawer Footer: Promo Code & Summary -->
+        <div id="cart-footer-summary" class="hidden p-5 border-t border-cream-border bg-cream/70 space-y-3">
+            <!-- Promo Code Input -->
+            <div class="flex gap-2">
+                <input id="promo-code-input" type="text" placeholder="Nhập mã giảm giá (VD: WELCOME50)" class="flex-1 px-3.5 py-2 rounded-xl bg-white border border-cream-border text-xs uppercase focus:outline-none focus:border-forest">
+                <button id="apply-promo-btn" type="button" class="px-4 py-2 rounded-xl bg-forest hover:bg-forest-light text-white text-xs font-bold transition cursor-pointer">Áp dụng</button>
+            </div>
+            <p id="promo-feedback" class="hidden text-[11px] font-semibold"></p>
+
+            <!-- Price Breakdown -->
+            <div class="space-y-1.5 text-xs text-gray-600 pt-1">
+                <div class="flex justify-between">
+                    <span>Tạm tính:</span>
+                    <span id="cart-subtotal" class="font-semibold text-gray-800">0đ</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Phí vận chuyển:</span>
+                    <span id="cart-shipping" class="font-semibold text-gray-800">30.000đ</span>
+                </div>
+                <div id="cart-discount-row" class="hidden justify-between text-emerald-700 font-semibold">
+                    <span>Giảm giá (WELCOME50):</span>
+                    <span>-50.000đ</span>
+                </div>
+                <div class="flex justify-between text-sm font-display font-extrabold text-forest pt-1.5 border-t border-cream-border">
+                    <span>Tổng cộng:</span>
+                    <span id="cart-total" class="text-amberbrand text-base">0đ</span>
+                </div>
+            </div>
+
+            <button id="proceed-checkout-btn" type="button" class="w-full py-3 rounded-full bg-forest hover:bg-forest-light text-white font-bold text-sm shadow-md transition cursor-pointer">
+                Tiến hành đặt hàng
+            </button>
+        </div>
+    </aside>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ==================== 9. 4-COLUMN FOOTER ==================== -->
+    <footer class="bg-forest text-cream mt-14 border-t border-forest-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Col 1: Brand Story -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-amberbrand text-white flex items-center justify-center font-bold">M</span>
+                        <span class="font-display font-extrabold text-xl tracking-tight text-white">MỘC <span class="text-amberbrand-light">VẢI</span></span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-cream/80 leading-relaxed">
+                        Thương hiệu thời trang ứng dụng Việt Nam tiên phong ứng dụng chất liệu xanh: Sợi Cafe, Airycool và sợi Tre Bamboo. Đẹp tự nhiên, bền vững mỗi ngày.
+                    </p>
+                    <p class="text-xs text-amberbrand-light font-semibold">Hotline CSKH: 1800 2086 (Miễn phí)</p>
+                </div>
+
+                <!-- Col 2: Customer Support -->
+                <div>
+                    <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Hỗ Trợ Khách Hàng</h4>
+                    <ul class="space-y-2.5 text-xs sm:text-sm text-cream/80">
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Hướng dẫn chọn size chuẩn</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Chính sách khách hàng thân thiết</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Tra cứu đơn hàng trực tuyến</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Câu hỏi thường gặp (FAQ)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Store Policies -->
+                <div>
+                    <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Chính Sách Mộc Vải</h4>
+                    <ul class="space-y-2.5 text-xs sm:text-sm text-cream/80">
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Miễn phí vận chuyển đơn từ 498K</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Đổi trả tận nơi trong 15 ngày</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Bảo hành đường may trọn đời</a></li>
+                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Chính sách bảo mật thông tin</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Newsletter Signup -->
+                <div>
+                    <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Đăng Ký Nhận Ưu Đãi</h4>
+                    <p class="text-xs sm:text-sm text-cream/80 mb-3">Nhận ngay voucher <strong>50.000đ</strong> cho đơn hàng đầu tiên và cập nhật BST mới sớm nhất.</p>
+                    <form id="newsletter-form" class="flex gap-2">
+                        <input id="newsletter-email" type="email" required placeholder="Email của bạn..." class="flex-1 min-w-0 px-3.5 py-2.5 rounded-full bg-white/10 border border-white/20 text-xs text-white placeholder-cream/60 focus:outline-none focus:border-amberbrand-light">
+                        <button type="submit" class="px-4 py-2.5 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white text-xs font-bold shrink-0 transition cursor-pointer">Đăng ký</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-10 pt-6 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-cream/70">
+                <p>© 2026 MỘC VẢI (VERDANT) Fashion Vietnam. All rights reserved.</p>
+                <p>Thiết kế bởi đội ngũ Mộc Vải • Xanh Rừng & Vàng Đất</p>
+            </div>
+        </div>
+    </footer>
+
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>
