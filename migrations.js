@@ -17,3 +17,13 @@ export function migrateStaffRole(db, schema) {
  } catch(error) {db.exec('ROLLBACK');throw error;}
  finally {db.exec('PRAGMA foreign_keys=ON');}
 }
+export function migrateFulfillment(db){
+ db.exec('BEGIN IMMEDIATE');
+ try{
+  for(const [table,columns] of Object.entries({cart_meta:{fulfillment:"TEXT NOT NULL DEFAULT 'delivery'",province:"TEXT NOT NULL DEFAULT ''"},orders:{fulfillment:"TEXT NOT NULL DEFAULT 'delivery'",province:"TEXT NOT NULL DEFAULT ''",store_address:"TEXT NOT NULL DEFAULT ''"}})){
+   const existing=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(c=>c.name));
+   for(const [column,type] of Object.entries(columns))if(!existing.has(column))db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+  db.exec('COMMIT');
+ }catch(error){db.exec('ROLLBACK');throw error;}
+}

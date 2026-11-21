@@ -1,4 +1,5 @@
 import {api,esc,busy,redirectForLogin} from '/shared.js';
+import {mountFulfillment} from '/checkout.js';
 
         // Safe SVG Data URI Fallback Image so NO broken images ever appear
         window.FALLBACK_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231B4332'/%3E%3Cstop offset='100%25' stop-color='%232D6A4F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='500' fill='url(%23g)'/%3E%3Ctext x='50%25' y='48%25' dominant-baseline='middle' text-anchor='middle' fill='%23FAF9F6' font-family='sans-serif' font-weight='bold' font-size='22'%3EM%E1%BB%98C V%E1%BA%A2I%3C/text%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' fill='%23F59E0B' font-family='sans-serif' font-size='12' letter-spacing='3'%3EVERDANT%3C/text%3E%3C/svg%3E";
@@ -6,6 +7,11 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
         document.addEventListener('DOMContentLoaded', async () => {
             try {
             const me = await api('/me');
+            const management=me.user&&me.user.role!=='customer';
+            document.body.classList.toggle('management-mode',!!management);
+            const policyStyle=document.createElement('style');policyStyle.textContent='.management-mode #open-cart-btn,.management-mode [data-quickadd-id],.management-mode #quickview-body div:has(> #qv-add-btn),.management-mode .portal-open-btn[data-portal-tab="orders"]{display:none!important}';document.head.append(policyStyle);
+            const textWalker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let textNode;
+            while(textNode=textWalker.nextNode())textNode.nodeValue=textNode.nodeValue.replace('Miễn phí vận chuyển toàn quốc cho đơn hàng từ 498.000đ.','Miễn phí nhận tại cửa hàng và giao trong TP.HCM.').replace('Miễn phí vận chuyển đơn từ 498K','Miễn phí giao trong TP.HCM');
             const escapeTree = value => typeof value === 'string' ? esc(value) : Array.isArray(value) ? value.map(escapeTree) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([k,v]) => [k,escapeTree(v)])) : value;
 
             // --- PRODUCT DATASET ---
@@ -25,9 +31,6 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
                 orders: []
             };
 
-            const FREE_SHIP_THRESHOLD = 498000;
-            const SHIPPING_FEE = 30000;
-            const PROMO_DISCOUNT = 50000;
 
             const formatVND = (num) => new Intl.NumberFormat('vi-VN').format(num) + 'đ';
 
@@ -146,6 +149,7 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
                 }
             };
 
+            INFO_DATA.stores.body=`<div class="space-y-3 text-sm text-gray-600 mt-3"><div class="p-3.5 rounded-2xl bg-cream border border-cream-border"><strong class="text-forest block">Cửa hàng MỘC VẢI</strong><p>${esc(me.config.fulfillment.storeAddress)}</p></div></div>`;
             document.querySelectorAll('.mega-info-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const key = btn.dataset.infoModal;
@@ -653,8 +657,11 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
 
 
             let serverCart;
+            const fulfillmentContainer=document.createElement('div');checkoutForm.insertBefore(fulfillmentContainer,document.getElementById('checkout-address'));
+            const fulfillmentUI=mountFulfillment(fulfillmentContainer,me.config.fulfillment,document.getElementById('checkout-address'),async choice=>{acceptCart(await api('/cart/fulfillment','POST',choice));},e=>showToast(e.message));
             function acceptCart(c) {
                 serverCart=c;
+                fulfillmentUI.set(c);
                 state.cart=c.items.map(i=>({...i,key:String(i.variant_id),colorName:esc(i.color),size:esc(i.size),name:esc(i.name),img:esc(i.img)}));
                 state.promoApplied=c.discount>0;
                 renderCart();
@@ -668,6 +675,7 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
                 return cartQueue;
             }
             async function addToCart(product,colorObj,size,qty=1) {
+                if(state.user&&state.user.role!=='customer')return showToast('Tài khoản quản lý không đặt mua hàng.');
                 const variant=product.variants.find(v=>v.active&&v.color===colorObj.name&&v.size===size);
                 if(!variant) return showToast('Biến thể này chưa có hàng.');
                 await changeCart(items=>{
@@ -723,7 +731,7 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
 
                 updateShippingProgress(subtotal);
                 document.getElementById('cart-subtotal').textContent = formatVND(subtotal);
-                document.getElementById('cart-shipping').textContent = shipping === 0 ? 'Miễn phí' : formatVND(shipping);
+                document.getElementById('cart-shipping').textContent = serverCart.shippingPending?'Chọn nơi nhận hàng':shipping === 0 ? 'Miễn phí' : formatVND(shipping);
 
                 const discountRow = document.getElementById('cart-discount-row');
                 if (state.promoApplied) {
@@ -739,15 +747,8 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
             function updateShippingProgress(subtotal) {
                 const textEl = document.getElementById('shipping-progress-text');
                 const barEl = document.getElementById('shipping-progress-bar');
-                const pct = Math.min(100, Math.round((subtotal / FREE_SHIP_THRESHOLD) * 100));
-                barEl.style.width = `${pct}%`;
-
-                if (subtotal >= FREE_SHIP_THRESHOLD) {
-                    textEl.innerHTML = `🎉 Chúc mừng! Đơn hàng của bạn được <strong>Miễn phí vận chuyển</strong>`;
-                } else {
-                    const remaining = FREE_SHIP_THRESHOLD - subtotal;
-                    textEl.innerHTML = `Mua thêm <span class="text-amberbrand font-bold">${formatVND(remaining)}</span> để được <strong>Miễn phí vận chuyển</strong>`;
-                }
+                barEl.style.width=serverCart&&!serverCart.shippingPending&&serverCart.shipping===0?'100%':'0%';
+                textEl.textContent='Nhận tại cửa hàng hoặc giao trong TP.HCM miễn phí. Ngoài tỉnh 30.000đ/đơn.';
             }
 
 
@@ -763,6 +764,7 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
             document.getElementById('proceed-checkout-btn').addEventListener('click',()=>busy(document.getElementById('proceed-checkout-btn'),async()=>{
                 state.user=(await api('/me')).user;
                 if(!state.user) {location.href='/account?checkout=1';return;}
+                if(state.user.role!=='customer'){location.href='/admin';return;}
                 checkoutForm.classList.remove('hidden');
                 document.getElementById('checkout-name').value=state.user.name;
                 document.getElementById('checkout-phone').value=state.user.phone||'';
@@ -773,8 +775,9 @@ import {api,esc,busy,redirectForLogin} from '/shared.js';
             checkoutForm.addEventListener('submit',e=>{
                 e.preventDefault();busy(checkoutForm.querySelector('[type=submit]'),async()=>{
                     await cartQueue;
+                    await fulfillmentUI.wait();
                     sessionStorage.setItem('mv-checkout-key',checkoutKey);
-                    const o=await api('/orders','POST',{requestKey:checkoutKey,quote:serverCart.quote,receiver:document.getElementById('checkout-name').value,phone:document.getElementById('checkout-phone').value,address:document.getElementById('checkout-address').value,method:'cod'});
+                    const o=await api('/orders','POST',{requestKey:checkoutKey,quote:serverCart.quote,...fulfillmentUI.read(),receiver:document.getElementById('checkout-name').value,phone:document.getElementById('checkout-phone').value,address:document.getElementById('checkout-address').value,method:'cod'});
                     sessionStorage.removeItem('mv-checkout-key');checkoutKey=crypto.randomUUID();
                     acceptCart(await api('/cart'));state.orders=await api('/orders');updateAccountUI();
                     document.getElementById('empty-cart-view').classList.add('hidden');

@@ -4,11 +4,14 @@ import { randomBytes, scryptSync, timingSafeEqual, createHash, randomUUID } from
 import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { migrateStaffRole } from './migrations.js';
+import { migrateStaffRole,migrateFulfillment } from './migrations.js';
+import {PROVINCES,STORE_PROVINCE,OUTSIDE_FEE,storeAddress,selection,shippingFee} from './shipping.js';
+import {buildReport} from './reports.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-export const STATUS = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
+export const STATUS = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',ready:'Chờ nhận tại cửa hàng',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
 const NEXT = {pending:['confirmed','cancelled'],confirmed:['preparing','cancelled'],preparing:['shipping','cancelled'],shipping:['delivered'],delivered:[],cancelled:[]};
+const nextFor=o=>o.fulfillment==='pickup'?({pending:['confirmed','cancelled'],confirmed:['preparing','cancelled'],preparing:['ready','cancelled'],ready:['delivered','cancelled'],delivered:[],cancelled:[]}[o.status]||[]):NEXT[o.status]||[];
 const POINTS_UNIT = 10000;
 const now = () => new Date().toISOString();
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -26,7 +29,7 @@ export function createApp(options={}) {
  if(dbPath!==':memory:') mkdirSync(dirname(resolve(dbPath)),{recursive:true});
  const db=new DatabaseSync(dbPath);
  const schema=readFileSync(join(ROOT,'schema.sql'),'utf8');
- db.exec(schema);migrateStaffRole(db,schema);
+ db.exec(schema);migrateStaffRole(db,schema);migrateFulfillment(db);
  const run=(sql,...args)=>db.prepare(sql).run(...args);
  const one=(sql,...args)=>db.prepare(sql).get(...args);
  const all=(sql,...args)=>db.prepare(sql).all(...args);
@@ -59,19 +62,21 @@ export function createApp(options={}) {
    return {...JSON.parse(p.metadata),id:p.id,name:p.name,price:p.price,active:!!p.active,colors,sizes:[...new Set(variants.map(v=>v.size))],variants,version:hash(JSON.stringify([p,variants]))};
   });
  }
- function cart(owner) {
+ function cart(owner,choice=null) {
   const items=all('SELECT c.variant_id,c.qty,v.color,v.size,v.img,v.stock,v.active AS variant_active,p.active,p.id,p.name,p.price FROM carts c JOIN variants v ON v.id=c.variant_id JOIN products p ON p.id=v.product_id WHERE c.owner=? ORDER BY c.variant_id',owner);
-  const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0),promo=one('SELECT promo FROM cart_meta WHERE owner=?',owner)?.promo||'';
+  const meta=one('SELECT * FROM cart_meta WHERE owner=?',owner)||{};
+  choice=choice||selection(meta,true);
+  const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0),promo=meta.promo||'';
   const discount=promo==='WELCOME50'&&subtotal>=99000?Math.min(50000,subtotal):0;
-  const shipping=items.length&&subtotal<498000?30000:0;
-  const quote=hash(JSON.stringify({items:items.map(i=>[i.variant_id,i.qty,i.price,i.active,i.variant_active]),subtotal,shipping,discount}));
-  return {items,subtotal,shipping,discount,total:subtotal+shipping-discount,promo,quote};
+  const shipping=shippingFee(choice,!!items.length),shippingPending=!!items.length&&choice.fulfillment==='delivery'&&!choice.province;
+  const quote=hash(JSON.stringify({items:items.map(i=>[i.variant_id,i.qty,i.price,i.active,i.variant_active]),subtotal,shipping,discount,...choice}));
+  return {items,subtotal,shipping,shippingPending,discount,total:subtotal+shipping-discount,promo,quote,...choice};
  }
  function order(id) {
   const o=one('SELECT o.*,u.email AS customer_email FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=?',id);
   if(!o) fail(404,'Không tìm thấy đơn hàng.');
   const credit=one('SELECT points FROM loyalty_points WHERE order_id=?',id);
-  return {...o,earnedPoints:credit?.points??0,pointsAwarded:!!credit,statusLabel:STATUS[o.status],items:all('SELECT * FROM order_items WHERE order_id=?',id),history:all('SELECT status,note,created_at FROM order_history WHERE order_id=? ORDER BY id',id),payments:all('SELECT status,reference,created_at FROM payment_events WHERE order_id=? ORDER BY id',id),next:NEXT[o.status]};
+  return {...o,earnedPoints:credit?.points??0,pointsAwarded:!!credit,statusLabel:o.fulfillment==='pickup'&&o.status==='delivered'?'Đã nhận tại cửa hàng':STATUS[o.status],items:all('SELECT * FROM order_items WHERE order_id=?',id),history:all('SELECT status,note,created_at FROM order_history WHERE order_id=? ORDER BY id',id),payments:all('SELECT status,reference,created_at FROM payment_events WHERE order_id=? ORDER BY id',id),next:nextFor(o)};
  }
  const attempts=new Map();
  function limit(req) { const key=req.socket.remoteAddress, t=Date.now(); let a=attempts.get(key); if(!a||t>a.until) a={count:0,until:t+60000}; if(++a.count>20) fail(429,'Thử quá nhiều lần. Vui lòng đợi một phút.'); attempts.set(key,a); if(attempts.size>10000) for(const [k,v] of attempts) if(v.until<t) attempts.delete(k); }
@@ -82,7 +87,7 @@ export function createApp(options={}) {
   try {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
    if(!path.startsWith('/api/')) {
-    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js'};
+    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
     const type=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';
     res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-cache'}); return res.end(readFileSync(join(ROOT,'public',file)));
@@ -100,6 +105,7 @@ export function createApp(options={}) {
    if(session.user_id&&!user) { run('DELETE FROM sessions WHERE token=?',session.token);session=newSession(); }
    owner=user?'u:'+user.id:'s:'+session.token;
    const requireUser=()=>{ if(!user) fail(401,'Vui lòng đăng nhập.'); };
+   const requireCustomer=()=>{requireUser();if(user.role!=='customer')fail(403,'Chỉ tài khoản khách hàng được đặt mua online.');};
    const requireAdmin=()=>{ requireUser();if(user.role!=='admin') fail(403,'Bạn không có quyền quản trị.'); };
    if(!['GET','HEAD'].includes(method)) {
     const origin=req.headers.origin; if(origin&&origin!==`http://${req.headers.host}`&&origin!==`https://${req.headers.host}`) fail(403,'Nguồn yêu cầu không hợp lệ.');
@@ -112,7 +118,7 @@ export function createApp(options={}) {
     try {b=JSON.parse(body||'{}');}catch{fail(400,'JSON không hợp lệ.');} if(!b||Array.isArray(b)||typeof b!=='object') fail(400,'Dữ liệu không hợp lệ.');
    }
    const bank=process.env.BANK_DETAILS||'';
-   if(method==='GET'&&path==='/api/me') return send(200,{user:publicUser(user),csrf:session.csrf,config:{bankDetails:bank,paymentMethods:bank?['cod','bank_transfer']:['cod'],statuses:STATUS}});
+   if(method==='GET'&&path==='/api/me') return send(200,{user:publicUser(user),csrf:session.csrf,config:{bankDetails:bank,paymentMethods:bank?['cod','bank_transfer']:['cod'],statuses:STATUS,fulfillment:{provinces:PROVINCES,storeProvince:STORE_PROVINCE,storeAddress:storeAddress(),outsideFee:OUTSIDE_FEE}}});
    if(method==='GET'&&path==='/api/products') return send(200,products());
    if(method==='POST'&&['/api/auth/register','/api/auth/login'].includes(path)) {
     limit(req); const mail=email(b.email);string(b.password,'Mật khẩu',8,128);const pass=b.password;
@@ -124,11 +130,15 @@ export function createApp(options={}) {
     if(!u||!passwordValid(pass,u.password)||!u.active) fail(401,'Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.');
     tx(()=>{
      const destination='u:'+u.id;
-     for(const item of all('SELECT * FROM carts WHERE owner=?',owner)) {
+     for(const item of u.role==='customer'?all('SELECT * FROM carts WHERE owner=?',owner):[]) {
       const existing=one('SELECT qty FROM carts WHERE owner=? AND variant_id=?',destination,item.variant_id);
       if(owner!==destination) run('INSERT INTO carts(owner,variant_id,qty) VALUES(?,?,?) ON CONFLICT(owner,variant_id) DO UPDATE SET qty=excluded.qty',destination,item.variant_id,Math.min(99,item.qty+(existing?.qty||0)));
      }
-     if(owner!==destination) {run('DELETE FROM carts WHERE owner=?',owner);run('DELETE FROM cart_meta WHERE owner=?',owner);}
+     if(owner!==destination) {
+      const guestMeta=one('SELECT * FROM cart_meta WHERE owner=?',owner);
+      if(guestMeta&&u.role==='customer')run('INSERT INTO cart_meta(owner,promo,fulfillment,province) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET promo=excluded.promo,fulfillment=excluded.fulfillment,province=excluded.province',destination,guestMeta.promo,guestMeta.fulfillment,guestMeta.province);
+      run('DELETE FROM carts WHERE owner=?',owner);run('DELETE FROM cart_meta WHERE owner=?',owner);
+     }
      run('DELETE FROM sessions WHERE token=?',session.token);session=newSession(u.id);
     }); return send(200,{user:publicUser(u),csrf:session.csrf});
    }
@@ -138,6 +148,10 @@ export function createApp(options={}) {
     run('UPDATE users SET name=?,phone=?,address=? WHERE id=?',name,p,address,user.id);return send(200,publicUser(one('SELECT * FROM users WHERE id=?',user.id)));
    }
    if(method==='GET'&&path==='/api/cart') return send(200,cart(owner));
+   if(user&&user.role!=='customer'&&path.startsWith('/api/cart')&&method!=='GET') fail(403,'Tài khoản quản lý không sử dụng giỏ hàng mua sắm.');
+   if(method==='POST'&&path==='/api/cart/fulfillment'){
+    const choice=selection(b,true);run('INSERT INTO cart_meta(owner,fulfillment,province) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET fulfillment=excluded.fulfillment,province=excluded.province',owner,choice.fulfillment,choice.province);return send(200,cart(owner));
+   }
    if(method==='PUT'&&path==='/api/cart') {
     if(!Array.isArray(b.items)||b.items.length>100) fail(400,'Giỏ hàng không hợp lệ.');
     const seen=new Set();const items=b.items.map(i=>{if(!i||typeof i!=='object')fail(400,'Sản phẩm trong giỏ không hợp lệ.');integer(i.variant_id,'Biến thể',1);integer(i.qty,'Số lượng',1,99);if(seen.has(i.variant_id)) fail(400,'Biến thể bị lặp.');seen.add(i.variant_id);const v=one('SELECT v.*,p.active AS product_active FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=?',i.variant_id);if(!v||!v.active||!v.product_active) fail(409,'Sản phẩm đã ngừng bán. Hãy xóa khỏi giỏ.');if(i.qty>v.stock) fail(409,`Chỉ còn ${v.stock} sản phẩm ${v.color}, size ${v.size}.`);return i;});
@@ -152,18 +166,20 @@ export function createApp(options={}) {
     requireUser();return send(200,{balance:pointsBalance(user.id),unit:POINTS_UNIT,history:all('SELECT order_id,eligible_amount,points,created_at FROM loyalty_points WHERE user_id=? ORDER BY created_at DESC,order_id',user.id)});
    }
    if(method==='POST'&&path==='/api/orders') {
-    requireUser();const key=string(b.requestKey,'Mã yêu cầu',16,100); const existing=one('SELECT id FROM orders WHERE user_id=? AND request_key=?',user.id,key);if(existing) return send(200,order(existing.id));
-    const receiver=string(b.receiver,'Người nhận',2,100),p=phone(b.phone),address=string(b.address,'Địa chỉ',10,500);
+    requireCustomer();const key=string(b.requestKey,'Mã yêu cầu',16,100); const existing=one('SELECT id FROM orders WHERE user_id=? AND request_key=?',user.id,key);if(existing) return send(200,order(existing.id));
+    const stored=one('SELECT * FROM cart_meta WHERE owner=?',owner)||{};
+    const choice=selection({fulfillment:b.fulfillment??stored.fulfillment,province:b.province??stored.province});
+    const receiver=string(b.receiver,'Người nhận',2,100),p=phone(b.phone),address=choice.fulfillment==='pickup'?storeAddress():string(b.address,'Địa chỉ',10,500);
     if(!['cod',...(bank?['bank_transfer']:[])].includes(b.method)) fail(400,'Phương thức thanh toán chưa được hỗ trợ.');
     const id='MV'+randomUUID().replaceAll('-','').slice(0,12).toUpperCase();
     tx(()=>{
-     const c=cart(owner);if(!c.items.length) fail(400,'Giỏ hàng trống.');
+     const c=cart(owner,choice);if(!c.items.length) fail(400,'Giỏ hàng trống.');
      if(b.quote&&b.quote!==c.quote) fail(409,'Giỏ hàng hoặc giá đã thay đổi. Hãy xem lại tổng tiền và xác nhận lại.');
      for(const i of c.items) {
       if(!i.active||!i.variant_active) fail(409,`${i.name} đã ngừng bán.`);
       if(run('UPDATE variants SET stock=stock-? WHERE id=? AND stock>=?',i.qty,i.variant_id,i.qty).changes!==1) fail(409,`${i.name} (${i.color}/${i.size}) không đủ tồn kho.`);
      }
-     run('INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',id,user.id,key,receiver,p,address,c.subtotal,c.shipping,c.discount,c.total,b.method,now());
+     run('INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at,fulfillment,province,store_address) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',id,user.id,key,receiver,p,address,c.subtotal,c.shipping,c.discount,c.total,b.method,now(),choice.fulfillment,choice.province,storeAddress());
      for(const i of c.items) run('INSERT INTO order_items(order_id,variant_id,name,color,size,img,price,qty) VALUES(?,?,?,?,?,?,?,?)',id,i.variant_id,i.name,i.color,i.size,i.img,i.price,i.qty);
      run('INSERT INTO order_history(order_id,status,note,actor,created_at) VALUES(?,?,?,?,?)',id,'pending','Đơn hàng được tạo; tồn kho đã được giữ.',user.id,now());
      run('DELETE FROM carts WHERE owner=?',owner);run('DELETE FROM cart_meta WHERE owner=?',owner);
@@ -178,8 +194,13 @@ export function createApp(options={}) {
    if(path.startsWith('/api/admin/')) {
     requireUser();
     const staffOrderAccess=(method==='GET'&&path==='/api/admin/orders')||
-     (method==='PATCH'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/status$/.test(path));
+     (method==='PATCH'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/status$/.test(path))||
+     (['GET','POST'].includes(method)&&path==='/api/admin/products')||
+     (method==='GET'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/invoice$/.test(path));
     if(user.role!=='admin'&&!(user.role==='staff'&&staffOrderAccess)) requireAdmin();
+    if(method==='GET'&&path==='/api/admin/reports')return send(200,buildReport(db,{from:url.searchParams.get('from'),to:url.searchParams.get('to')}));
+    const invoiceMatch=path.match(/^\/api\/admin\/orders\/([A-Z0-9]+)\/invoice$/);
+    if(method==='GET'&&invoiceMatch){const o=order(invoiceMatch[1]);return send(200,{order:o,storeAddress:o.store_address||storeAddress()});}
     if(method==='GET'&&path==='/api/admin/users') return send(200,all('SELECT * FROM users ORDER BY id DESC').map(u=>({...publicUser(u),created_at:u.created_at})));
     const userMatch=path.match(/^\/api\/admin\/users\/(\d+)$/);
     if(method==='PATCH'&&userMatch) {
@@ -211,9 +232,10 @@ export function createApp(options={}) {
     if(method==='GET'&&path==='/api/admin/orders') return send(200,all('SELECT id FROM orders ORDER BY created_at DESC').map(o=>order(o.id)));
     const statusMatch=path.match(/^\/api\/admin\/orders\/([A-Z0-9]+)\/status$/);
     if(method==='PATCH'&&statusMatch) {
-     const o=order(statusMatch[1]);if(!NEXT[o.status].includes(b.status)) fail(409,'Không thể chuyển sang trạng thái này.');
+     const o=order(statusMatch[1]);if(!nextFor(o).includes(b.status)) fail(409,'Không thể chuyển sang trạng thái này.');
      const carrier=b.status==='shipping'?string(b.carrier,'Đơn vị vận chuyển',2,100):o.carrier,tracking=b.status==='shipping'?string(b.tracking,'Mã vận đơn',3,100):o.tracking;
-     changeStatus(o,b.status,user.id,string(b.note||STATUS[b.status],'Ghi chú',1,500),carrier,tracking);return send(200,order(o.id));
+     const defaultNote=o.fulfillment==='pickup'&&b.status==='delivered'?'Khách đã nhận tại cửa hàng':STATUS[b.status];
+     changeStatus(o,b.status,user.id,string(b.note||defaultNote,'Ghi chú',1,500),carrier,tracking);return send(200,order(o.id));
     }
     const paymentMatch=path.match(/^\/api\/admin\/orders\/([A-Z0-9]+)\/payment$/);
     if(method==='PATCH'&&paymentMatch) {

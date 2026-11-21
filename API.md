@@ -13,12 +13,15 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 | GET | `/api/cart` | Giỏ hiện tại; giá, phí, giảm, tổng và quote |
 | PUT | `/api/cart` | Thay danh sách `{items:[{variant_id,qty}]}` |
 | POST | `/api/cart/promo` | `{code}`; chuỗi rỗng để bỏ mã |
+| POST | `/api/cart/fulfillment` | Lưu `{fulfillment,province}`; `delivery` hoặc `pickup`; trả lại giá/phí/quote mới |
 | GET | `/api/orders` | Chỉ các đơn thuộc khách đang đăng nhập, kèm chi tiết và lịch sử |
 | GET | `/api/loyalty` | Bắt buộc đăng nhập: `{balance,unit,history}` của chính tài khoản; không hỗ trợ sửa điểm |
 | POST | `/api/orders` | `{receiver,phone,address,method,requestKey,quote?}`; method `cod` / `bank_transfer` khi bật |
 | POST | `/api/orders/:id/cancel` | Khách hủy đơn mình khi `pending` |
 | POST | `/api/newsletter` | Lưu `{email}` đăng ký nhận ưu đãi; chưa gửi email |
 | GET/POST | `/api/admin/products` | Danh sách / tạo sản phẩm |
+| GET | `/api/admin/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` | Chỉ admin: tổng hợp, kỳ trước, tỷ lệ tăng trưởng, biểu đồ và top sản phẩm; tối đa 366 ngày |
+| GET | `/api/admin/orders/:id/invoice` | Admin/nhân viên: dữ liệu bill từ đơn đã lưu; trang in tại `/invoice?id=:id` |
 | PUT | `/api/admin/products/:id` | Sửa sản phẩm, phải gửi `version` lấy từ danh sách admin |
 | GET | `/api/admin/customers` | Danh sách khách và thống kê đơn |
 | GET | `/api/admin/users` | Chỉ admin: danh sách tài khoản và vai trò, không trả mật khẩu |
@@ -30,8 +33,10 @@ Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nh
 
 Sản phẩm tạo/sửa gồm `name,price,originalPrice,audience,category,fabric,badge,active,flashSale,variants`. Mỗi biến thể có `color,size,hex,img,stock`; màu/size không trùng; ảnh HTTPS. Biến thể không có trong lần lưu tiếp theo bị ngừng bán, không xóa lịch sử.
 
-Trạng thái đơn dùng `pending,confirmed,preparing,shipping,delivered,cancelled`. Trạng thái thanh toán dùng `unpaid,paid,refund_pending,refunded`. Giá, tồn kho và quyền truy cập luôn được kiểm tra ở server. Giá trị `quote` từ giỏ giúp client phát hiện giỏ hoặc tổng tiền đã thay đổi trước khi xác nhận. API danh sách hiện chưa phân trang; phù hợp phạm vi bài tập, cần bổ sung khi dữ liệu tăng.
+Trạng thái đơn dùng `pending,confirmed,preparing,ready,shipping,delivered,cancelled`; `ready` dành cho pickup, `shipping` dành cho giao đến địa chỉ. Trạng thái thanh toán dùng `unpaid,paid,refund_pending,refunded`. Giá, tồn kho và quyền truy cập luôn được kiểm tra ở server. Giá trị `quote` từ giỏ giúp client phát hiện giỏ hoặc tổng tiền đã thay đổi trước khi xác nhận. API danh sách hiện chưa phân trang; phù hợp phạm vi bài tập, cần bổ sung khi dữ liệu tăng.
 
-Vai trò `staff` chỉ được `GET /api/admin/orders` và `PATCH /api/admin/orders/:id/status` trong nhóm API quản trị. Mọi API sản phẩm/khách hàng/tài khoản/thanh toán ở nhóm này chỉ dành cho `admin`; gọi trực tiếp API không vượt qua được kiểm tra quyền. Đăng ký công khai luôn tạo `customer`.
+Vai trò `staff` được xem đơn, cập nhật trạng thái, đọc bill, xem sản phẩm và tạo sản phẩm mới. `PUT /api/admin/products/:id`, quản lý khách hàng/tài khoản, thanh toán/hoàn tiền và báo cáo chỉ dành cho `admin`. `POST /api/orders` chỉ dành cho `customer`; admin/nhân viên không được sửa giỏ hàng để mua. Đăng ký công khai luôn tạo `customer`.
+
+Đơn mới dùng `fulfillment` (`delivery` / `pickup`) và `province` (giá trị từ `config.fulfillment.provinces` trong `/api/me`). Nếu không gửi, dùng lựa chọn đã lưu trong giỏ; giao hàng thiếu tỉnh/thành sẽ bị từ chối. Nhận cửa hàng và giao TP.HCM phí 0; ngoài tỉnh 30.000đ. `shipping` do client gửi bị bỏ qua. Với pickup, server dùng địa chỉ cửa hàng, không dùng địa chỉ do client gửi. Đơn trả thêm `fulfillment,province,store_address`; pickup có bước `ready` trước `delivered`. Đổi cách nhận/province làm thay đổi quote nên phải xác nhận tổng tiền mới.
 
 `POST /api/orders` bắt buộc có phiên đăng nhập còn hiệu lực. Hồ sơ trong `/api/me` có `user.loyaltyPoints`; mỗi đơn có `earnedPoints` và `pointsAwarded`. Khi chuyển đơn sang `delivered`, server ghi điểm trong cùng transaction với trạng thái: `floor(max(0,subtotal-discount)/10000)`. Bảng `loyalty_points` dùng `order_id` làm khóa chính để chặn cộng trùng; khách không thể chỉ định người nhận điểm hoặc số điểm. `/api/loyalty` bỏ qua mọi tham số chọn user và luôn lọc theo phiên hiện tại.

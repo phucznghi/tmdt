@@ -1,10 +1,10 @@
 # Kết quả xác minh
 
-Ngày kiểm tra: 21/11/2026 (Asia/Saigon).
+Ngày cập nhật kiểm tra: 22/11/2026 (Asia/Saigon).
 
 - Nguồn UI: `phucznghi/tmdt`, commit `229d3b47ee97605139ad0b43782914834d49291f`.
 - HTML/CSS trang chủ trước script ứng dụng được giữ nguyên; SHA-256: `510361fef355e6f6246110f72dd1c1d59e195df9429cefdb1d93024955152197`.
-- `npm.cmd test`: **21/21 kiểm thử đạt** trên Node.js 24.17.0, gồm quyền nhân viên, tích điểm và migration database cũ.
+- `npm.cmd test`: **27/27 kiểm thử đạt** trên Node.js 24.17.0, gồm báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
 - Kiểm tra cú pháp các file JavaScript server/client thành công.
 - Đã thao tác trong trình duyệt trên database thử riêng: thêm vào giỏ từ UI gốc; đăng ký khách; khôi phục giỏ sau đăng ký; đặt COD; xem lịch sử đơn; đăng xuất/đăng nhập admin; xác nhận, chuẩn bị và chuyển đơn sang đang giao với mã vận đơn; sửa tồn kho biến thể; xem danh sách khách hàng.
 - Database dùng cho thao tác trình duyệt nằm trong thư mục làm việc tạm, không đưa vào mã nguồn bàn giao. Lần chạy mới không có tài khoản admin mặc định hay đơn kiểm thử.
@@ -21,3 +21,7 @@ Kiểm thử đăng nhập/tích điểm: khách chưa đăng nhập, đã đăn
 Đã kiểm tra trình duyệt trên database giả: khách chưa đăng nhập bấm đặt hàng được đưa đến trang đăng nhập; đăng nhập xong giữ giỏ và đặt COD; tài khoản ban đầu 0 điểm; nhân viên chuyển đơn qua các bước đến Đã giao; khách đăng nhập lại thấy 32 điểm cho 329.000đ tiền hàng, lịch sử ghi đúng mã đơn (không tính 30.000đ vận chuyển).
 
 Đã thử cho phiên đăng nhập hết hạn sau khi điền form đặt hàng: khi bấm xác nhận, không tạo thêm đơn và giao diện chuyển về trang đăng nhập.
+
+Các kiểm thử mới xác minh: miễn phí TP.HCM/nhận tại cửa hàng và thu 30.000đ ngoài tỉnh kể cả đơn lớn; từ chối tỉnh sai/thiếu và quote cũ; giữ lựa chọn giỏ sau đăng nhập; pickup qua ready rồi mới hoàn tất/tích điểm; nhân viên thêm sản phẩm nhưng không sửa, in bill đúng tổng và không đọc báo cáo; admin/nhân viên không mua hàng; báo cáo tính theo tiền thu/hoàn và mốc ngày Việt Nam, không ghi nhận đơn chưa thanh toán; migration giữ phí và tổng đơn cũ.
+
+Đã thao tác trên trình duyệt với database giả: chọn Hà Nội thấy phí 30.000đ, chuyển pickup thấy miễn phí và 970 Quang Trung, đặt pickup từ cả giỏ trang chủ lẫn trang tài khoản; nhân viên thêm sản phẩm và chỉ xem được sản phẩm sau tạo; xử lý pickup tới chờ nhận/đã nhận; mở bill với tiền hàng 658.000đ, giảm 50.000đ, ship 30.000đ và tổng 638.000đ; admin xem báo cáo, đổi khoảng ngày để xem biểu đồ tháng; admin tìm sản phẩm được nhưng không thấy nút giỏ/mua. Kiểm tra in dừng ở trang bill sẵn sàng gọi hộp thoại in, không gửi lệnh đến máy in vật lý.

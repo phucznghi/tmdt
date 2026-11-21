@@ -27,9 +27,12 @@ Hệ thống có ba vai trò, kiểm tra quyền tại backend:
 
 | Chức năng | Khách hàng | Nhân viên | Admin |
 | --- | --- | --- | --- |
-| Mua hàng, xem đơn cá nhân | Có | Có | Có |
+| Giỏ hàng và đặt mua online | Có | Không | Không |
 | Xem tất cả đơn, xử lý trạng thái và vận chuyển | Không | Có | Có |
+| Thêm sản phẩm mới | Không | Có | Có |
 | Sửa sản phẩm / tồn kho, quản lý khách hàng | Không | Không | Có |
+| Xem và in bill có tổng giá trị đơn hàng | Không | Có | Có |
+| Báo cáo doanh thu, tăng trưởng | Không | Không | Có |
 | Xác nhận nhận tiền hoặc hoàn tiền | Không | Không | Có |
 | Cấp / thu hồi quyền, khóa / mở tài khoản | Không | Không | Có |
 
@@ -41,6 +44,25 @@ Hệ thống có ba vai trò, kiểm tra quyền tại backend:
 4. Nhân viên đăng nhập lại, mở **Xử lý đơn hàng** để vào khu vực đơn và vận chuyển.
 
 Nhân viên có thể xác nhận, chuẩn bị, giao và hoàn tất đơn theo quy trình hiện có; có thể hủy trước khi giao cho đơn vị vận chuyển. Hủy đơn đã trả tiền chỉ tạo yêu cầu chờ hoàn tiền, không xác nhận đã hoàn tiền. Admin thực hiện bước đối soát riêng.
+
+Nhân viên được tìm/xem danh sách và thêm sản phẩm mới (gồm biến thể, tồn kho ban đầu), nhưng không sửa sản phẩm hoặc tồn kho đã có. Admin/nhân viên dùng khu vực quản lý; giỏ hàng và đặt mua chỉ dành cho khách hàng, bị kiểm tra cả ở backend.
+
+## Báo cáo admin và in bill
+
+Admin mở **Doanh thu & tăng trưởng** để xem doanh thu tổng hợp, chọn khoảng ngày, xem biểu đồ theo ngày (hoặc theo tháng khi khoảng chọn trên 62 ngày), so sánh với kỳ trước có cùng số ngày, số đơn, khách mới và sản phẩm đã giao/nhận thành công.
+
+Doanh thu trong báo cáo được định nghĩa là **tiền thực thu trừ tiền thực hoàn, gồm phí giao hàng**, dựa trên nhật ký xác nhận thanh toán/hoàn tiền và ngày đối soát theo giờ Việt Nam. Đơn mới hoặc chưa trả tiền không tính là doanh thu. Khi kỳ trước bằng 0 và kỳ này có phát sinh, báo cáo hiển thị chưa tính tỷ lệ thay vì tạo phần trăm giả. Đây là báo cáo thu tiền, chưa tính chi phí/lợi nhuận.
+
+Trong danh sách đơn, admin/nhân viên bấm **In bill / Xem tổng giá trị đơn** để mở phiếu gồm mã/ngày đơn, khách nhận, cách nhận hàng, địa chỉ, từng sản phẩm/màu/size/số lượng/đơn giá, tiền hàng, giảm giá, phí giao, **tổng giá trị đơn** và trạng thái thanh toán. Bấm **In bill / Lưu PDF** để dùng hộp thoại in của trình duyệt. Mở bill không tự đánh dấu đã thanh toán hay đã giao.
+
+## Nhận hàng và phí giao
+
+- Cửa hàng: **970 Quang Trung, TP.HCM**; có thể cấu hình lại bằng `STORE_ADDRESS`.
+- **Lấy tại cửa hàng:** miễn phí; không yêu cầu địa chỉ giao của khách. Luồng: chờ xác nhận → xác nhận → chuẩn bị → chờ nhận tại cửa hàng → đã nhận tại cửa hàng. Chỉ bước cuối mới tích điểm.
+- **Giao trong TP.HCM:** miễn phí.
+- **Giao ngoài tỉnh/thành khác:** **30.000đ/đơn**, kể cả đơn giá trị cao. Chính sách này thay cho miễn phí theo ngưỡng 498.000đ trước đây.
+- Khách chọn tỉnh/thành trong danh sách khi giao đến địa chỉ; chưa chọn thì giỏ hiển thị chưa xác định phí và không đặt được đơn. Server tính phí, không tin phí do trình duyệt gửi.
+- Cách nhận, tỉnh/thành, địa chỉ cửa hàng và phí được lưu theo từng đơn. Nâng cấp không đổi phí hoặc tổng tiền của đơn cũ.
 
 Thay đổi vai trò hoặc khóa tài khoản hủy các phiên đăng nhập cũ ngay lập tức. Tự đăng ký hoặc sửa hồ sơ không thể tự nâng quyền. Admin không được tự khóa hoặc tự hạ quyền tài khoản đang đăng nhập; hệ thống giữ ít nhất một admin hoạt động. Những thay đổi quyền có nhật ký audit.
 
@@ -85,17 +107,17 @@ Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên 
 2. Khách chỉ hủy được đơn của mình ở trạng thái **Chờ xác nhận**. Admin có thể hủy trước khi giao cho đơn vị vận chuyển. Không chuyển ngược hoặc bỏ qua bước.
 3. Tồn kho được giữ ngay khi tạo đơn bằng giao dịch SQLite; khi hủy, hoàn kho đúng một lần. Biến thể không đủ hàng hoặc bị ngừng bán không thể đặt.
 4. Trước khi chuyển sang **Đang giao**, bắt buộc có tên đơn vị vận chuyển và mã vận đơn. Đây là quản lý vận chuyển thủ công, chưa gọi API GHN/GHTK/Viettel Post.
-5. Thanh toán tách biệt với giao hàng. Với COD, chỉ xác nhận nhận tiền sau khi đơn **Đã giao**, và phải có biên nhận đối soát.
+5. Thanh toán tách biệt với giao hàng. Với COD, chỉ xác nhận nhận tiền sau khi đơn **Đã giao / Đã nhận tại cửa hàng**, và phải có biên nhận đối soát.
 6. Đơn chuyển khoản cần admin xác nhận tiền thực nhận với mã giao dịch. Hủy đơn đã trả tiền chuyển sang **Chờ hoàn tiền**; admin hoàn tiền bên ngoài hệ thống rồi lưu biên nhận để chuyển **Đã hoàn tiền**. Bấm nút không thực hiện chuyển tiền ngân hàng.
 7. Mỗi yêu cầu đặt hàng có khóa chống gửi trùng. API không nhận giá sản phẩm từ trình duyệt làm nguồn tính tiền; ảnh, tên, giá và biến thể được chụp lại trong đơn để không đổi theo catalog sau này.
-8. Phí giao hàng 30.000đ; miễn phí từ 498.000đ theo tổng tiền hàng. Mã `WELCOME50` giảm 50.000đ cho đơn từ 99.000đ. Hiện mã này có thể dùng nhiều lần; chưa triển khai chương trình giới hạn một lần mỗi tài khoản.
+8. Phí giao theo nơi nhận như mục trên. Mã `WELCOME50` giảm 50.000đ cho đơn từ 99.000đ. Hiện mã này có thể dùng nhiều lần; chưa triển khai chương trình giới hạn một lần mỗi tài khoản.
 9. Khi admin đang sửa sản phẩm mà tồn kho/giá đã thay đổi, hệ thống từ chối ghi đè và yêu cầu tải lại.
 
 ## Dữ liệu và cấu hình
 
 Database tự tạo tại `data/mocvai.sqlite`; WAL/SHM có thể xuất hiện khi server chạy. Lần chạy đầu nạp 12 sản phẩm từ UI gốc, mặc định mỗi màu/size có 20 đơn vị để thử nghiệp vụ. Các con số này là dữ liệu mẫu, cần sửa tại admin trước khi vận hành thật.
 
-Các bảng: `users`, `sessions`, `products`, `variants`, `carts`, `cart_meta`, `orders`, `order_items`, `order_history`, `payment_events`, `subscribers`, `audit`. Xem cấu trúc trong `schema.sql`.
+Các bảng: `users`, `sessions`, `products`, `variants`, `carts`, `cart_meta`, `orders`, `order_items`, `order_history`, `payment_events`, `loyalty_points`, `subscribers`, `audit`. Xem cấu trúc trong `schema.sql`.
 
 Các biến môi trường PowerShell, đặt trước khi chạy server:
 

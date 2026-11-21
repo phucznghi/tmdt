@@ -21,8 +21,8 @@ async function fixture(t,options={}){
  },async register(email='buyer@example.test'){await this.call('/me');return this.call('/auth/register','POST',{email,password:'Buyer-password-2026',name:'Khách hàng thử nghiệm'});},async login(){await this.call('/me');return this.call('/auth/login','POST',ADMIN);}};}
  return {app,base,dir,client};
 }
-const checkout=(requestKey='request-checkout-0001',method='cod')=>({receiver:'Nguyễn Văn An',phone:'0901234567',address:'128 Nguyễn Trãi, TP Hồ Chí Minh',method,requestKey});
-async function add(c,variant_id,qty=1){return c.call('/cart','PUT',{items:[{variant_id,qty}]});}
+const checkout=(requestKey='request-checkout-0001',method='cod')=>({receiver:'Nguyễn Văn An',phone:'0901234567',address:'128 Nguyễn Trãi, TP Hồ Chí Minh',method,requestKey,fulfillment:'delivery',province:'TP.HCM'});
+async function add(c,variant_id,qty=1){await c.call('/cart','PUT',{items:[{variant_id,qty}]});return c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'TP.HCM'});}
 async function deliver(admin,id){for(const status of ['confirmed','preparing','shipping','delivered'])await admin.call('/admin/orders/'+id+'/status','PATCH',{status,carrier:'GHN',tracking:'POINTS-TEST-001'});}
 
 test('register, real password auth, profile, admin permissions and CSRF',async t=>{
@@ -110,10 +110,11 @@ test('staff can process and ship orders but cannot access admin-only resources o
  for(const status of ['confirmed','preparing'])await staff.call(path+'/status','PATCH',{status});
  await staff.call(path+'/status','PATCH',{status:'shipping',carrier:'GHN',tracking:'STAFF-001'});
  await staff.call(path+'/status','PATCH',{status:'delivered'});
- for(const p of ['/admin/users','/admin/customers','/admin/products'])await staff.call(p,'GET',undefined,403);
+ for(const p of ['/admin/users','/admin/customers','/admin/reports'])await staff.call(p,'GET',undefined,403);
+ assert.ok((await staff.call('/admin/products')).length>0);
  await staff.call('/admin/users/'+user.id,'PATCH',{role:'admin'},403);
  await staff.call('/admin/customers/'+user.id,'PATCH',{active:false},403);
- await staff.call('/admin/products','POST',{},403);
+ await staff.call('/admin/products','POST',{},400);
  await staff.call('/admin/products/1','PUT',{},403);
  await staff.call(path+'/payment','PATCH',{status:'paid',reference:'STAFF-COD-001'},403);
  await admin.call(path+'/payment','PATCH',{status:'paid',reference:'ADMIN-COD-001'});
@@ -186,4 +187,57 @@ test('upgrade backfills older delivered orders once and point history persists o
   const reopened=createApp({dbPath:join(dir,'test.sqlite')});try{assert.equal(reopened.db.prepare('SELECT COUNT(*) AS n FROM loyalty_points WHERE user_id=?').get(user.id).n,1);assert.equal(reopened.db.prepare('SELECT points FROM loyalty_points WHERE order_id=?').get(o.id).points,Math.floor(o.subtotal/10000));assert.deepEqual(reopened.db.prepare('PRAGMA foreign_key_check').all(),[]);}finally{reopened.close();}
  }
  assert.equal((await c.call('/loyalty')).history.length,1);
+});
+
+test('shipping is free for TP.HCM or pickup, and 30000 outside regardless of order value',async t=>{
+ const {client}=await fixture(t);const c=client();await c.register();const p=(await c.call('/products')).find(p=>p.price>=400000),v=p.variants[0];await add(c,v.id,2);
+ let cart=await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'Hà Nội'});assert.equal(cart.shipping,30000);assert.equal(cart.shippingPending,false);
+ const outside=await c.call('/orders','POST',{...checkout('request-outside-shipping-001'),province:'Hà Nội',shipping:0,total:1,quote:cart.quote},201);assert.equal(outside.shipping,30000);assert.equal(outside.total,p.price*2+30000);assert.equal(outside.province,'Hà Nội');
+ await add(c,v.id);cart=await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'TP.HCM'});assert.equal(cart.shipping,0);const local=await c.call('/orders','POST',{...checkout('request-local-shipping-001'),quote:cart.quote},201);assert.equal(local.shipping,0);
+ await add(c,v.id);cart=await c.call('/cart/fulfillment','POST',{fulfillment:'pickup',province:'Hà Nội'});assert.equal(cart.shipping,0);assert.equal(cart.province,'TP.HCM');
+ const pickup=await c.call('/orders','POST',{...checkout('request-pickup-shipping-001'),address:'',fulfillment:'pickup',province:'Hà Nội',quote:cart.quote},201);assert.equal(pickup.shipping,0);assert.equal(pickup.address,'970 Quang Trung, TP.HCM');assert.equal(pickup.fulfillment,'pickup');assert.equal(pickup.store_address,'970 Quang Trung, TP.HCM');
+});
+
+test('shipping requires a valid destination, rejects stale quotes, and guest preferences survive login',async t=>{
+ const {client}=await fixture(t);const c=client();await c.call('/me');const v=(await c.call('/products'))[0].variants[0];await c.call('/cart','PUT',{items:[{variant_id:v.id,qty:1}]});assert.equal((await c.call('/cart')).shippingPending,true);
+ const guest=await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'Hà Nội'});await c.register();assert.equal((await c.call('/cart')).province,'Hà Nội');assert.equal((await c.call('/cart')).shipping,30000);
+ await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'Không có tỉnh này'},400);
+ await c.call('/cart/fulfillment','POST',{fulfillment:'fake',province:'TP.HCM'},400);
+ await c.call('/orders','POST',{...checkout(),province:''},400);
+ await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'TP.HCM'});
+ await c.call('/orders','POST',{...checkout(),quote:guest.quote},409);
+});
+
+test('pickup follows ready then received, without a carrier; points only accrue on receipt',async t=>{
+ const {client}=await fixture(t);const c=client(),a=client();await c.register();await a.login();const v=(await c.call('/products'))[0].variants[0];await add(c,v.id);await c.call('/cart/fulfillment','POST',{fulfillment:'pickup'});const o=await c.call('/orders','POST',{...checkout(),fulfillment:'pickup'},201),path='/admin/orders/'+o.id+'/status';
+ await a.call(path,'PATCH',{status:'confirmed'});await a.call(path,'PATCH',{status:'preparing'});await a.call(path,'PATCH',{status:'shipping'},409);await a.call(path,'PATCH',{status:'delivered'},409);const ready=await a.call(path,'PATCH',{status:'ready'});assert.equal(ready.carrier,'');assert.equal((await c.call('/loyalty')).balance,0);const received=await a.call(path,'PATCH',{status:'delivered'});assert.equal(received.statusLabel,'Đã nhận tại cửa hàng');assert.ok(received.earnedPoints>0);assert.equal(received.shipping,0);
+});
+
+test('staff can add products and print bills, but cannot edit products, buy, or read reports',async t=>{
+ const {client}=await fixture(t);const a=client(),s=client(),c=client(),guest=client();await a.login();const {user}=await s.register('staff-new@example.test');await c.register();await a.call('/admin/users/'+user.id,'PATCH',{role:'staff'});await s.call('/me');await s.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});
+ const original=(await s.call('/admin/products'))[0];const created=await s.call('/admin/products','POST',{...original,name:'Sản phẩm do nhân viên thêm',variants:[{color:'Xanh',size:'M',hex:'#123456',img:'https://example.com/product.jpg',stock:5}]},201);assert.ok(created.id);await s.call('/admin/products/'+created.id,'PUT',created,403);await c.call('/admin/products','POST',created,403);await s.call('/admin/reports','GET',undefined,403);await c.call('/admin/reports','GET',undefined,403);
+ for(const operator of [a,s]){await operator.call('/cart','PUT',{items:[]},403);await operator.call('/cart/promo','POST',{code:'WELCOME50'},403);await operator.call('/cart/fulfillment','POST',{fulfillment:'pickup'},403);await operator.call('/orders','POST',checkout(),403);}
+ await add(c,created.variants[0].id,2);const o=await c.call('/orders','POST',checkout(),201);const bill=await s.call('/admin/orders/'+o.id+'/invoice');assert.equal(bill.order.total,o.total);assert.equal(bill.order.items[0].qty,2);assert.equal(bill.storeAddress,'970 Quang Trung, TP.HCM');await a.call('/admin/orders/'+o.id+'/invoice');await c.call('/admin/orders/'+o.id+'/invoice','GET',undefined,403);await guest.call('/me');await guest.call('/admin/orders/'+o.id+'/invoice','GET',undefined,401);
+});
+
+test('reports summarize receipts, refunds, growth and local-day boundaries without counting unpaid orders as revenue',async t=>{
+ const old=process.env.BANK_DETAILS;process.env.BANK_DETAILS='Ngân hàng kiểm thử';t.after(()=>{if(old===undefined)delete process.env.BANK_DETAILS;else process.env.BANK_DETAILS=old;});
+ const {client,app}=await fixture(t);const a=client(),c=client();await a.login();const {user}=await c.register();const v=(await c.call('/products'))[0].variants[0];const paid=[];
+ for(let i=0;i<2;i++){await add(c,v.id);const o=await c.call('/orders','POST',checkout('request-report-paid-'+i),201);await deliver(a,o.id);await a.call('/admin/orders/'+o.id+'/payment','PATCH',{status:'paid',reference:'REPORT-PAID-'+i});paid.push(o);}
+ await add(c,v.id);const refunded=await c.call('/orders','POST',checkout('request-report-refund-001','bank_transfer'),201);await a.call('/admin/orders/'+refunded.id+'/payment','PATCH',{status:'paid',reference:'REPORT-BANK-001'});await c.call('/orders/'+refunded.id+'/cancel','POST',{});await a.call('/admin/orders/'+refunded.id+'/payment','PATCH',{status:'refunded',reference:'REPORT-REFUND-001'});
+ await add(c,v.id);const unpaid=await c.call('/orders','POST',checkout('request-report-unpaid-001'),201);
+ app.db.prepare('UPDATE orders SET created_at=? WHERE id=?').run('2026-11-20T01:00:00Z',paid[0].id);for(const o of [paid[1],refunded,unpaid])app.db.prepare('UPDATE orders SET created_at=? WHERE id=?').run('2026-11-21T17:00:00Z',o.id);
+ app.db.prepare("UPDATE payment_events SET created_at=? WHERE order_id=? AND status='paid'").run('2026-11-19T17:00:00Z',paid[0].id);app.db.prepare("UPDATE payment_events SET created_at=? WHERE order_id=? AND status='paid'").run('2026-11-21T17:00:00Z',paid[1].id);app.db.prepare("UPDATE payment_events SET created_at=? WHERE order_id=? AND status='paid'").run('2026-11-20T17:00:00Z',refunded.id);app.db.prepare("UPDATE payment_events SET created_at=? WHERE order_id=? AND status='refunded'").run('2026-11-22T17:00:00Z',refunded.id);
+ app.db.prepare("UPDATE order_history SET created_at=? WHERE order_id=? AND status='delivered'").run('2026-11-20T01:00:00Z',paid[0].id);app.db.prepare("UPDATE order_history SET created_at=? WHERE order_id=? AND status='delivered'").run('2026-11-21T17:00:00Z',paid[1].id);app.db.prepare('UPDATE users SET created_at=? WHERE id=?').run('2026-11-21T17:00:00Z',user.id);
+ const report=await a.call('/admin/reports?from=2026-11-22&to=2026-11-23');assert.equal(report.current.collected,paid[1].total);assert.equal(report.current.refunded,refunded.total);assert.equal(report.current.netRevenue,0);assert.equal(report.totals.netRevenue,paid[0].total+paid[1].total);assert.equal(report.current.orderCount,3);assert.equal(report.current.newCustomers,1);assert.equal(report.growth.revenuePercent,-100);assert.equal(report.growth.ordersPercent,200);assert.equal(report.series[0].netRevenue,paid[1].total);assert.equal(report.series[1].netRevenue,-refunded.total);assert.equal(report.topProducts[0].units,1);
+ const monthly=await a.call('/admin/reports?from=2026-01-01&to=2026-12-31');assert.equal(monthly.grouping,'month');assert.equal(monthly.series.length,12);await a.call('/admin/reports?from=2026-02-30&to=2026-03-01','GET',undefined,400);await a.call('/admin/reports?from=2025-01-01&to=2026-12-31','GET',undefined,400);
+});
+
+test('fulfillment migration preserves historical shipping totals and existing carts',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'mocvai-shipping-')),dbPath=join(dir,'legacy.sqlite');let app;
+ try{
+  const db=new DatabaseSync(dbPath);let schema=readFileSync(new URL('../schema.sql',import.meta.url),'utf8');schema=schema.replace("CREATE TABLE IF NOT EXISTS cart_meta (owner TEXT PRIMARY KEY, promo TEXT NOT NULL DEFAULT '', fulfillment TEXT NOT NULL DEFAULT 'delivery', province TEXT NOT NULL DEFAULT '');","CREATE TABLE IF NOT EXISTS cart_meta (owner TEXT PRIMARY KEY, promo TEXT NOT NULL DEFAULT '');");schema=schema.replace(" fulfillment TEXT NOT NULL DEFAULT 'delivery', province TEXT NOT NULL DEFAULT '', store_address TEXT NOT NULL DEFAULT '',\n",'');db.exec(schema);
+  db.prepare('INSERT INTO users(id,email,name,password) VALUES(?,?,?,?)').run(1,'old@example.test','Khách cũ',passwordHash('Old-password-2026'));db.exec("INSERT INTO orders(id,user_id,request_key,receiver,phone,address,subtotal,shipping,discount,total,method,created_at) VALUES('MVOLD01',1,'old-order-request','Khách cũ','0901234567','Địa chỉ cũ',100000,70000,0,170000,'cod','2026-11-21T00:00:00Z'); INSERT INTO cart_meta(owner,promo) VALUES('u:1','WELCOME50');");db.close();
+  app=createApp({dbPath});const o=app.db.prepare('SELECT * FROM orders').get();assert.equal(o.shipping,70000);assert.equal(o.total,170000);assert.equal(o.fulfillment,'delivery');assert.equal(app.db.prepare('SELECT promo FROM cart_meta').get().promo,'WELCOME50');assert.deepEqual(app.db.prepare('PRAGMA foreign_key_check').all(),[]);
+ }finally{app?.close();rmSync(dir,{recursive:true,force:true});}
 });

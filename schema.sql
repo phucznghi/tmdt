@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS carts (
  owner TEXT NOT NULL, variant_id INTEGER NOT NULL REFERENCES variants(id), qty INTEGER NOT NULL CHECK(qty BETWEEN 1 AND 99),
  PRIMARY KEY(owner,variant_id)
 );
-CREATE TABLE IF NOT EXISTS cart_meta (owner TEXT PRIMARY KEY, promo TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS cart_meta (owner TEXT PRIMARY KEY, promo TEXT NOT NULL DEFAULT '', fulfillment TEXT NOT NULL DEFAULT 'delivery', province TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS orders (
  id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), request_key TEXT NOT NULL,
  receiver TEXT NOT NULL, phone TEXT NOT NULL, address TEXT NOT NULL,
@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS orders (
  method TEXT NOT NULL CHECK(method IN ('cod','bank_transfer')),
  payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK(payment_status IN ('unpaid','paid','refund_pending','refunded')),
  status TEXT NOT NULL DEFAULT 'pending', carrier TEXT NOT NULL DEFAULT '', tracking TEXT NOT NULL DEFAULT '',
+ fulfillment TEXT NOT NULL DEFAULT 'delivery', province TEXT NOT NULL DEFAULT '', store_address TEXT NOT NULL DEFAULT '',
  created_at TEXT NOT NULL, UNIQUE(user_id,request_key)
 );
 CREATE TABLE IF NOT EXISTS order_items (
