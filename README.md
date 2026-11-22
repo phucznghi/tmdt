@@ -208,3 +208,7 @@ Nhập thêm hàng: mở Kho & nhập hàng, lập phiếu và tìm/chọn biế
 ### Giá bán danh mục Mộc Vải
 
 Theo yêu cầu mới, 12 mẫu có giá bán demo 149.000–399.000đ, nhãn Mới về; giao diện bỏ dòng Tham khảo UNIQLO và dùng Giá bán. Nguồn ảnh được giữ bằng liên kết nhỏ ở xem nhanh và tài liệu nguồn. Database cũ chạy `npm.cmd run catalog:prices` để áp dụng giá/nhãn cho đúng 12 mã nguồn, không đổi tồn, tài khoản hoặc giá snapshot của đơn đã đặt. Chạy lại không cập nhật trùng; server không tự ép giá khi khởi động.
+
+### Triển khai và bằng chứng vận hành
+
+Có `render.yaml`, `Dockerfile`, `/healthz` và các lệnh `npm run backup`, `npm run healthcheck`, `npm run benchmark`. Xem RUNBOOK.md cho trình tự triển khai, giới hạn SQLite và thử khôi phục. Cấu hình chưa được coi là đã deploy production; cần tài khoản hosting, volume, HTTPS và bằng chứng sau restart. Quick Tunnel chỉ dùng demo tạm.

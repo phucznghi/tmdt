@@ -4,7 +4,7 @@ Ngày cập nhật kiểm tra: 22/11/2026 (Asia/Saigon).
 
 - Nguồn UI: `phucznghi/tmdt`, commit `229d3b47ee97605139ad0b43782914834d49291f`.
 - HTML/CSS trang chủ trước script ứng dụng được giữ nguyên; SHA-256: `510361fef355e6f6246110f72dd1c1d59e195df9429cefdb1d93024955152197`.
-- `npm.cmd test`: **41/41 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
+- `npm.cmd test`: **42/42 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
 - Kiểm tra cú pháp các file JavaScript server/client thành công.
 - Đã thao tác trong trình duyệt trên database thử riêng: thêm vào giỏ từ UI gốc; đăng ký khách; khôi phục giỏ sau đăng ký; đặt COD; xem lịch sử đơn; đăng xuất/đăng nhập admin; xác nhận, chuẩn bị và chuyển đơn sang đang giao với mã vận đơn; sửa tồn kho biến thể; xem danh sách khách hàng.
 - Database dùng cho thao tác trình duyệt nằm trong thư mục làm việc tạm, không đưa vào mã nguồn bàn giao. Lần chạy mới không có tài khoản admin mặc định hay đơn kiểm thử.
@@ -43,3 +43,5 @@ Tìm kiếm không dấu/chống trùng: kiểm thử Unicode tổ hợp, đ/Đ,
 Đã kiểm tra thêm bản index tĩnh qua HTTP độc lập: `ao khoac navy` vẫn trả 2 sản phẩm và nút đăng nhập vẫn mở đúng thông báo chưa kết nối backend.
 
 Giá và nhãn mới: 12 mẫu có giá bán 149.000–399.000đ và nhãn Mới về; trình duyệt đã xác nhận không còn nhãn Tham khảo UNIQLO trên danh mục/xem nhanh, mẫu polo hiển thị 299.000đ. Kiểm thử cập nhật giá chạy lại không ghi trùng, giữ số tài khoản, tồn biến thể và tổng/đơn giá snapshot của đơn đặt trước khi đổi giá. Database được sao lưu trước khi cập nhật 12 sản phẩm.
+
+Bổ sung health không tạo session, backup SQLite có integrity/foreign-key/SHA256, benchmark đọc dùng DB tạm. Phiên báo cáo chạy 900 requests ở C1/C10/C30, 900 HTTP 200; P95 lần lượt 18.55/42.19/130.46 ms. Khôi phục file riêng đối chiếu 10 bảng và integrity ok; thời gian 38.03 ms chỉ là mở/đối chiếu tệp, không phải RTO hạ tầng. render.yaml/Dockerfile chưa được chạy trên hosting bên ngoài.

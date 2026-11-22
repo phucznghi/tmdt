@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: moc-vai
+    runtime: node
+    plan: starter
+    buildCommand: node --version
+    startCommand: npm start
+    healthCheckPath: /healthz
+    numInstances: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24.17.0
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: DB_PATH
+        value: /var/data/mocvai.sqlite
+      - key: BACKUP_DIR
+        value: /var/data/backups
+    disk:
+      name: moc-vai-data
+      mountPath: /var/data
+      sizeGB: 1

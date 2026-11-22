@@ -413,3 +413,9 @@ test('catalog price update caps display prices and preserves orders, stock and a
  assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,stock);assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM users').get().n,users);
  const saved=(await buyer.call('/orders'))[0];assert.equal(saved.total,588000);assert.equal(saved.items[0].price,588000);
 });
+
+
+test('health endpoint verifies the database without creating sessions',async t=>{
+ const {app,base}=await fixture(t);const before=app.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n;
+ const r=await fetch(base+'/healthz');assert.equal(r.status,200);assert.equal(r.headers.get('set-cookie'),null);assert.deepEqual(await r.json(),{status:'ok',database:'ok'});assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n,before);
+});

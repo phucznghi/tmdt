@@ -90,6 +90,7 @@ export function createApp(options={}) {
   const send=(status,data)=>{ res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}); res.end(JSON.stringify(data)); };
   try {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
+   if(path==='/healthz'&&['GET','HEAD'].includes(method)){try{db.prepare('SELECT 1').get();return send(200,{status:'ok',database:'ok'});}catch{return send(503,{status:'unavailable'});}}
    if(!path.startsWith('/api/')) {
     const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/support.js':'support.js','/support.css':'support.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/text.js':'text.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
