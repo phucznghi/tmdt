@@ -127,11 +127,11 @@ import {mountFulfillment} from '/checkout.js';
                     title: "Tin Tức & Câu Chuyện Chất Liệu Xanh",
                     body: `<div class="space-y-3 text-sm text-gray-600 mt-3">
                         <p class="p-3.5 rounded-2xl bg-forest-50 border border-forest/15">
-                            <strong class="text-forest block mb-1">🌿 Công nghệ Sợi Cafe tái chế từ bã cà phê Việt</strong>
-                            Giúp khử mùi tự nhiên, khô nhanh và giảm rác thải nhựa ra môi trường.
+                            <strong class="text-forest block mb-1">AIRism Cotton trong danh mục mới</strong>
+                            Xem thông tin chất liệu và thiết kế của từng mẫu tại trang sản phẩm gốc UNIQLO.
                         </p>
                         <p class="p-3.5 rounded-2xl bg-amberbrand-50 border border-amberbrand/20">
-                            <strong class="text-amberbrand-dark block mb-1">☀️ Airycool - Giải pháp làm mát ngày hè</strong>
+                            <strong class="text-amberbrand-dark block mb-1">DRY-EX và trang phục năng động</strong>
                             Cấu trúc sợi dẫn nhiệt thông minh hạ nhiệt độ bề mặt da ngay khi mặc.
                         </p>
                     </div>`
@@ -139,7 +139,7 @@ import {mountFulfillment} from '/checkout.js';
                 uniform: {
                     title: "Đồng Phục Doanh Nghiệp MỘC VẢI",
                     body: `<div class="space-y-3 text-sm text-gray-600 mt-3">
-                        <p>Thiết kế & sản xuất áo Polo đồng phục chất liệu Sợi Cafe, Airycool cao cấp cho doanh nghiệp từ 20 - 10.000 áo.</p>
+                        <p>Danh mục tham khảo phục vụ minh họa mua sắm; hiện chưa có chức năng đặt đồng phục doanh nghiệp trên web.</p>
                         <ul class="list-disc pl-5 space-y-1 text-gray-700 font-medium">
                             <li>Miễn phí thiết kế mẫu 3D & may mẫu thử tận nơi</li>
                             <li>In/thêu logo sắc nét, bảo hành độ bền màu 2 năm</li>
@@ -211,50 +211,8 @@ import {mountFulfillment} from '/checkout.js';
             setInterval(() => showSlide(currentSlide + 1), 6000);
 
             // --- 3. FLASH SALE COUNTDOWN & RENDER ---
-            let fsSecondsRemaining = (2 * 3600) + (22 * 60) + 21;
-            const fsHoursEl = document.getElementById('fs-hours');
-            const fsMinutesEl = document.getElementById('fs-minutes');
-            const fsSecondsEl = document.getElementById('fs-seconds');
-
-            setInterval(() => {
-                if (fsSecondsRemaining <= 0) fsSecondsRemaining = 3 * 3600;
-                fsSecondsRemaining--;
-                fsHoursEl.textContent = String(Math.floor(fsSecondsRemaining / 3600)).padStart(2, '0');
-                fsMinutesEl.textContent = String(Math.floor((fsSecondsRemaining % 3600) / 60)).padStart(2, '0');
-                fsSecondsEl.textContent = String(fsSecondsRemaining % 60).padStart(2, '0');
-            }, 1000);
-
             function renderFlashSale() {
-                const grid = document.getElementById('flash-sale-grid');
-                const flashProducts = PRODUCTS.filter(p => p.flashSale).slice(0, 5);
-                grid.innerHTML = flashProducts.map(p => {
-                    const color = p.colors[0];
-                    const soldPercent = Math.min(92, Math.max(48, Math.round((p.sold / 1500) * 100)));
-                    return `
-                        <div class="group bg-white rounded-2xl border border-cream-border hover:border-forest/40 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col">
-                            <div class="relative aspect-[4/5] bg-cream overflow-hidden cursor-pointer" data-quickview-id="${p.id}">
-                                <img src="${color.img}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.onerror=null;this.src=window.FALLBACK_IMG">
-                                <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-amberbrand text-white text-[11px] font-extrabold shadow-xs">${p.discount}</span>
-                                <button type="button" data-quickadd-id="${p.id}" class="quickadd-btn absolute bottom-2.5 left-2.5 right-2.5 py-2 rounded-xl bg-forest/95 hover:bg-forest text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition shadow-md cursor-pointer">
-                                    + Thêm nhanh
-                                </button>
-                            </div>
-                            <div class="p-3 flex-1 flex flex-col justify-between">
-                                <h3 class="text-xs sm:text-sm font-semibold text-gray-800 hover:text-forest line-clamp-2 cursor-pointer" data-quickview-id="${p.id}">${p.name}</h3>
-                                <div class="mt-2">
-                                    <div class="flex items-baseline gap-1.5 flex-wrap">
-                                        <span class="font-display font-extrabold text-sm sm:text-base text-amberbrand">${formatVND(p.price)}</span>
-                                        <span class="text-[11px] text-gray-400 line-through">${formatVND(p.originalPrice)}</span>
-                                    </div>
-                                    <div class="mt-2 w-full h-4 rounded-full bg-amberbrand-50 overflow-hidden relative flex items-center justify-center">
-                                        <div class="absolute left-0 top-0 bottom-0 bg-amberbrand rounded-full" style="width: ${soldPercent}%"></div>
-                                        <span class="relative z-10 text-[9px] font-extrabold text-white uppercase tracking-wider drop-shadow-xs">Đã bán ${p.sold}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                document.getElementById('flash-sale-grid').innerHTML=PRODUCTS.slice(0,5).map(p=>`<article class="bg-white rounded-2xl border border-cream-border overflow-hidden"><button type="button" data-quickview-id="${p.id}" class="w-full text-left"><img src="${p.colors[0].img}" alt="${p.name}" class="w-full aspect-[3/4] object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG"><div class="p-4"><p class="text-[10px] text-gray-500 mb-2">${p.audience} · Tham khảo UNIQLO</p><h3 class="font-semibold text-sm text-forest line-clamp-2">${p.name}</h3><strong class="block mt-2 text-amberbrand">${formatVND(p.price)}</strong></div></button></article>`).join('');
             }
 
             // --- 4. CATALOG FILTERING, SEARCH & RENDER ---
@@ -342,7 +300,7 @@ import {mountFulfillment} from '/checkout.js';
                     const matchAudience = state.audience === 'all' || p.audience === state.audience;
                     const matchCategory = state.category === 'all' || p.category === state.category;
                     let matchSpecial = true;
-                    if (state.specialTag === 'sale') matchSpecial = p.flashSale || p.badge === 'Sale Sốc';
+                    if (state.specialTag === 'sale') matchSpecial = !!p.source || p.flashSale || p.badge === 'Sale Sốc';
                     if (state.specialTag === 'new') matchSpecial = p.badge === 'Mới về';
                     if (state.specialTag === 'connect') matchSpecial = p.category === 'Áo Polo' || p.badge === 'BST Gia Đình';
 
@@ -385,7 +343,7 @@ import {mountFulfillment} from '/checkout.js';
                                 <div class="absolute top-3 left-3 flex flex-col gap-1.5">
                                     <span class="px-2.5 py-0.5 rounded-full bg-forest text-white text-[10px] font-bold shadow-xs">${p.badge}</span>
                                 </div>
-                                <span class="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-amberbrand text-white text-[11px] font-extrabold shadow-xs">${p.discount}</span>
+                                ${p.discount?`<span class="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-amberbrand text-white text-[11px] font-extrabold shadow-xs">${p.discount}</span>`:''}
 
                                 <!-- Hover Quick View Button -->
                                 <button type="button" data-quickview-id="${p.id}" class="absolute bottom-3 left-3 right-3 py-2 rounded-xl bg-white/95 hover:bg-forest text-forest hover:text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition shadow-md cursor-pointer">
@@ -406,7 +364,7 @@ import {mountFulfillment} from '/checkout.js';
                                                 </button>
                                             `).join('')}
                                         </div>
-                                        <span class="text-[11px] font-medium text-gray-500">★ ${p.rating}</span>
+                                        <span class="text-[11px] font-medium text-gray-500">${p.rating>0?'★ '+p.rating:'Chưa có đánh giá'}</span>
                                     </div>
 
                                     <!-- Title -->
@@ -419,7 +377,7 @@ import {mountFulfillment} from '/checkout.js';
                                 <div class="pt-1 border-t border-cream-border/70 flex items-center justify-between gap-2">
                                     <div>
                                         <span class="font-display font-extrabold text-sm sm:text-base text-forest block">${formatVND(p.price)}</span>
-                                        <span class="text-[11px] text-gray-400 line-through">${formatVND(p.originalPrice)}</span>
+                                        <span class="text-[11px] text-gray-400">${p.originalPrice>p.price?formatVND(p.originalPrice):'Giá tham khảo'}</span>
                                     </div>
                                     <button type="button" data-quickadd-id="${p.id}" class="quickadd-btn px-3 py-2 rounded-xl bg-forest-50 hover:bg-forest text-forest hover:text-white text-xs font-bold transition cursor-pointer shrink-0">
                                         + Giỏ
@@ -495,14 +453,15 @@ import {mountFulfillment} from '/checkout.js';
                                 <h3 class="font-display font-extrabold text-xl sm:text-2xl text-gray-900 leading-snug">${product.name}</h3>
                                 <div class="flex items-baseline gap-2.5">
                                     <span class="font-display font-extrabold text-2xl text-amberbrand">${formatVND(product.price)}</span>
-                                    <span class="text-sm text-gray-400 line-through">${formatVND(product.originalPrice)}</span>
-                                    <span class="px-2 py-0.5 rounded bg-amberbrand-50 text-amberbrand text-xs font-extrabold">${product.discount}</span>
+                                    <span class="text-sm text-gray-400">${product.originalPrice>product.price?formatVND(product.originalPrice):'Giá tham khảo'}</span>
+                                    ${product.discount?`<span class="px-2 py-0.5 rounded bg-amberbrand-50 text-amberbrand text-xs font-extrabold">${product.discount}</span>`:''}
                                 </div>
 
                                 <!-- Fabric Highlight Box -->
                                 <div class="p-3 rounded-2xl bg-forest-50 border border-forest/15 text-xs text-forest leading-relaxed">
-                                    <strong>🌿 Công nghệ chất liệu:</strong> ${product.fabric}
+                                    <strong>Thông tin sản phẩm:</strong> ${product.fabric}
                                 </div>
+                                ${product.source?`<p class="text-xs text-gray-500 leading-relaxed">Ảnh & thông tin: UNIQLO Việt Nam · Mã ${product.source.productCode}<br>Giá tham khảo cập nhật ${product.source.checkedAt}; tồn kho trên web là dữ liệu Mộc Vải.<br><a href="${product.source.url}" target="_blank" rel="noopener noreferrer" class="text-forest underline font-semibold">Xem sản phẩm gốc tại UNIQLO ↗</a></p>`:''}
 
                                 <!-- Color Selector -->
                                 <div>
@@ -532,7 +491,7 @@ import {mountFulfillment} from '/checkout.js';
 
                                     <!-- Vietnamese Size Chart Table -->
                                     <div class="${showSizeChart ? 'block' : 'hidden'} mt-3 p-3 rounded-2xl bg-cream border border-cream-border text-[11px]">
-                                        <table class="w-full text-left border-collapse">
+                                        ${product.source?`<p class="text-xs leading-relaxed">Size tham khảo: ${product.sizes.join(', ')}${product.audience==='Trẻ em'?' (theo chiều cao cm)':''}. Kiểm tra số đo chi tiết trên trang UNIQLO của từng mẫu trước khi chọn; không áp dụng bảng size chung cho mọi kiểu áo.</p>`:`<table class="w-full text-left border-collapse">
                                             <thead>
                                                 <tr class="border-b border-cream-border text-forest font-bold">
                                                     <th class="py-1">Size</th><th class="py-1">Chiều cao</th><th class="py-1">Cân nặng</th>
@@ -545,7 +504,7 @@ import {mountFulfillment} from '/checkout.js';
                                                 <tr><td class="py-1 font-bold">XL</td><td>1m74 - 1m80</td><td>71 - 78 kg</td></tr>
                                                 <tr><td class="py-1 font-bold">2XL</td><td>1m78 - 1m85</td><td>79 - 86 kg</td></tr>
                                             </tbody>
-                                        </table>
+                                        </table>`}
                                     </div>
                                 </div>
                             </div>

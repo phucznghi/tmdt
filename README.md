@@ -135,7 +135,7 @@ Không mở trực tiếp `index.html` bằng `file://`. Website cần chạy qu
 
 ## Dữ liệu và cấu hình
 
-Database tự tạo tại `data/mocvai.sqlite`; WAL/SHM có thể xuất hiện khi server chạy. Lần chạy đầu nạp 12 sản phẩm từ UI gốc, mặc định mỗi màu/size có 20 đơn vị để thử nghiệp vụ. Các con số này là dữ liệu mẫu, cần sửa tại admin trước khi vận hành thật.
+Database tự tạo tại `data/mocvai.sqlite`; WAL/SHM có thể xuất hiện khi server chạy. Lần chạy đầu nạp 12 sản phẩm tham khảo từ UNIQLO Việt Nam, mặc định mỗi màu/size có 20 đơn vị để thử nghiệp vụ. Các con số này là dữ liệu mẫu, cần sửa tại admin trước khi vận hành thật.
 
 Các bảng: `users`, `sessions`, `products`, `variants`, `carts`, `cart_meta`, `orders`, `order_items`, `order_history`, `payment_events`, `loyalty_points`, `inventory_receipts`, `inventory_receipt_items`, `stock_movements`, `subscribers`, `audit`. Xem cấu trúc trong `schema.sql`.
 
@@ -190,3 +190,9 @@ Trên GitHub Pages, nút đăng nhập mở hai lựa chọn và thông báo ch�
 Tám mục chân trang mở hộp thoại hỗ trợ dùng chung ở bản tĩnh và backend: size, tích điểm, tra cứu đơn, FAQ, giao hàng, đổi trả, bảo hành đường may và dữ liệu cá nhân. Hộp thoại hỗ trợ bàn phím, Escape, nút đóng và link trực tiếp dạng `#support-shipping`. Tra cứu đơn/điểm/hồ sơ dẫn đến đăng nhập; bản tĩnh chưa có URL backend sẽ thông báo cần kết nối máy chủ thay vì tạo đăng nhập giả.
 
 Bảng size là tham khảo chung. Nội dung đổi trả/bảo hành hướng dẫn tiếp nhận trực tiếp tại cửa hàng, không tự duyệt, đặt lịch lấy hàng hay thực hiện hoàn tiền. Footer dùng địa chỉ cửa hàng đã cung cấp thay cho hotline mẫu chưa được xác nhận. Newsletter hiển thị trạng thái ngay dưới form; backend lưu email, chống trùng, chưa gửi email tự động. Bản GitHub Pages không có backend thông báo chưa lưu email. WELCOME50 được ghi đúng điều kiện hiện tại (đơn từ 99.000đ), không hứa mã chỉ dành lần đầu.
+
+### Danh mục tham khảo UNIQLO Việt Nam
+
+Danh mục mới gồm 12 mẫu nam/nữ/trẻ em từ UNIQLO Việt Nam; xem `CATALOG-SOURCES.md` cho nguồn và giá kiểm tra. Ảnh/menu/banner và nội dung xem nhanh đã cập nhật. Giá ghi là tham khảo; không hiển thị đánh giá/lượt bán giả hoặc đồng hồ Flash Sale. Bản tĩnh dùng cùng dữ liệu với seed backend.
+
+Database mới dùng danh mục mới ngay. Database đã có dữ liệu: sao lưu trước, sau đó chạy `npm.cmd run catalog:uniqlo` trong cùng cấu hình DB_PATH của server. Lệnh chỉ ẩn đúng sản phẩm mẫu cũ chưa đổi tên, thêm mẫu nguồn chưa có và giữ nguyên sản phẩm tự thêm, tài khoản, biến thể/tồn cũ, đơn hàng và ảnh chụp trong đơn. Không đổi sản phẩm cũ thành mẫu khác. Chạy lại không nhân bản sản phẩm hoặc đặt lại tồn. Các biến thể mới có 20 đơn vị demo và bản ghi tồn ban đầu; đây không phải lượng hàng thực nhập từ UNIQLO. Nếu đã sửa tên sản phẩm mẫu cũ, cần admin chủ động ngừng bán thay vì script ẩn nhầm dữ liệu tự sửa.

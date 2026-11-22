@@ -291,7 +291,7 @@ export function createApp(options={}) {
    const cd=colorData.get(color);if(cd&&(cd.hex!==hex||cd.img!==img)) fail(400,'Các size cùng màu phải dùng chung mã màu và ảnh.');colorData.set(color,{hex,img});return {color,size,stock,img,hex};
   });
   return tx(()=>{
-   if(id) {const current=products(true).find(p=>p.id===id);if(!current) fail(404,'Không tìm thấy sản phẩm.');if(b.version!==current.version) fail(409,'Sản phẩm hoặc tồn kho đã thay đổi. Hãy tải lại trước khi sửa.');metadata.sold=current.sold;run('UPDATE products SET name=?,price=?,active=?,metadata=? WHERE id=?',name,price,Number(b.active),JSON.stringify(metadata),id);}
+   if(id) {const current=products(true).find(p=>p.id===id);if(!current) fail(404,'Không tìm thấy sản phẩm.');if(b.version!==current.version) fail(409,'Sản phẩm hoặc tồn kho đã thay đổi. Hãy tải lại trước khi sửa.');metadata.sold=current.sold;if(current.source)metadata.source=current.source;run('UPDATE products SET name=?,price=?,active=?,metadata=? WHERE id=?',name,price,Number(b.active),JSON.stringify(metadata),id);}
    else id=Number(run('INSERT INTO products(name,price,active,metadata) VALUES(?,?,?,?)',name,price,Number(b.active),JSON.stringify(metadata)).lastInsertRowid);
    run('UPDATE variants SET active=0 WHERE product_id=?',id);
    const stockReference='product-'+id+'-'+randomUUID();

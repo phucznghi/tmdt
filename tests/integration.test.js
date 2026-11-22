@@ -7,6 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {createApp,passwordHash} from '../server.js';
+import {importUniqloCatalog} from '../catalog-import.js';
 
 const ADMIN={email:'admin@example.test',password:'Admin-password-2026'};
 async function fixture(t,options={}){
@@ -336,4 +337,25 @@ test('newsletter saves a valid email once and rejects invalid input',async t=>{
  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM subscribers WHERE email=?').get('newsletter-demo@example.test').n,1);
  await c.call('/newsletter','POST',{email:'not-an-email'},400);
  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM subscribers').get().n,1);
+});
+
+
+test('Uniqlo catalog import archives only original samples and preserves old stock and history',()=>{
+ const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('../schema.sql',import.meta.url),'utf8'));
+ try{
+  db.prepare("INSERT INTO users(email,name,password,role) VALUES(?,?,?,'admin')").run('import-admin@example.test','Import admin',passwordHash('Admin-password-2026'));
+  const old=JSON.parse(readFileSync(new URL('../legacy-seed.json',import.meta.url),'utf8'))[0];
+  db.prepare('INSERT INTO products(id,name,price,metadata) VALUES(?,?,?,?)').run(old.id,old.name,old.price,JSON.stringify(old));
+  const v=Number(db.prepare('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,?)').run(old.id,'Xanh','M','#123456','https://example.com/old.jpg',7).lastInsertRowid);
+  db.prepare('INSERT INTO products(name,price,metadata) VALUES(?,?,?)').run('Sản phẩm cửa hàng tự thêm',123000,'{}');
+  assert.deepEqual(importUniqloCatalog(db),{added:12,archived:1});
+  assert.equal(db.prepare('SELECT active FROM products WHERE id=?').get(old.id).active,0);
+  assert.equal(db.prepare('SELECT stock FROM variants WHERE id=?').get(v).stock,7);
+  assert.equal(db.prepare('SELECT active FROM products WHERE name=?').get('Sản phẩm cửa hàng tự thêm').active,1);
+  const imported=db.prepare("SELECT * FROM products WHERE json_extract(metadata,'$.source.productCode') IS NOT NULL").all();assert.equal(imported.length,12);
+  const first=db.prepare('SELECT id FROM variants WHERE product_id=?').get(imported[0].id);db.prepare('UPDATE variants SET stock=stock-1 WHERE id=?').run(first.id);
+  const before=db.prepare('SELECT COUNT(*) AS n FROM stock_movements').get().n;
+  assert.deepEqual(importUniqloCatalog(db),{added:0,archived:0});assert.equal(db.prepare('SELECT stock FROM variants WHERE id=?').get(first.id).stock,19);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM stock_movements').get().n,before);
+  assert.equal(db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);
+ }finally{db.close();}
 });

@@ -1,87 +1,197 @@
 [
   {
-    "id": 1,
-    "name": "Áo Polo Nam Sợi Cafe Khử Mùi Tự Nhiên",
+    "id": 13,
+    "name": "AIRism Cotton Áo Polo Vải Pique",
     "audience": "Nam",
     "category": "Áo Polo",
-    "price": 329000,
-    "originalPrice": 449000,
-    "discount": "-27%",
-    "badge": "Bán chạy",
-    "rating": 4.9,
-    "sold": 1420,
-    "flashSale": true,
-    "fabric": "Sợi Cafe tái chế 50% + Cotton tự nhiên, kiểm soát mùi suốt 24h, chống tia UV UPF 45+.",
+    "price": 588000,
+    "originalPrice": 588000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo polo AIRism Cotton, dáng suông và không có túi. Bề mặt pique phù hợp phối cùng quần dài hoặc quần short.",
     "sizes": [
+      "XS",
       "S",
       "M",
       "L",
       "XL",
-      "2XL"
+      "XXL"
     ],
     "colors": [
       {
-        "name": "Xanh Rừng",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Vàng Đất",
-        "hex": "#D97706",
-        "img": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Trắng Kem",
-        "hex": "#F5F3EE",
-        "img": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80"
+        "name": "Nâu đậm",
+        "hex": "#4D3630",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/475367/item/vngoods_38_475367_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "475367",
+      "url": "https://www.uniqlo.com/vn/vi/products/E475367-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 2,
-    "name": "Áo Khoác Gió Nam 3C Plus Cản Gió Trượt Nước",
+    "id": 14,
+    "name": "DRY-EX Áo Hoodie Chống Tia UV Kéo Khóa",
     "audience": "Nam",
     "category": "Áo Khoác",
-    "price": 449000,
-    "originalPrice": 649000,
-    "discount": "-30%",
-    "badge": "Flash Sale",
-    "rating": 4.9,
-    "sold": 980,
-    "flashSale": true,
-    "fabric": "Công nghệ vải 3C Plus 2 lớp siêu nhẹ 280g, trượt nước bề mặt, chắn gió lạnh hiệu quả.",
+    "price": 588000,
+    "originalPrice": 588000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo khoác có mũ dùng vải lưới DRY-EX nhanh khô, co giãn đa hướng. Túi bên có khóa, tay áo có lỗ xỏ ngón.",
     "sizes": [
+      "XS",
+      "S",
       "M",
       "L",
       "XL",
-      "2XL"
+      "XXL"
     ],
     "colors": [
       {
-        "name": "Xanh Rêu Đậm",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Đen Tuyền",
-        "hex": "#1F2937",
-        "img": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80"
+        "name": "Xanh olive",
+        "hex": "#73715B",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/465203/item/vngoods_57_465203_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "465203",
+      "url": "https://www.uniqlo.com/vn/vi/products/E465203-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 3,
-    "name": "Áo Polo Nữ Airycool Mát Lạnh Tức Thì",
+    "id": 15,
+    "name": "Áo Parka Chống Tia UV Bỏ Túi",
+    "audience": "Nam",
+    "category": "Áo Khoác",
+    "price": 784000,
+    "originalPrice": 784000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo parka chống tia UV với thiết kế có thể gấp gọn. Một lựa chọn khoác ngoài cho sinh hoạt và di chuyển hằng ngày.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "colors": [
+      {
+        "name": "Xanh navy",
+        "hex": "#263249",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/469292/item/vngoods_69_469292_3x4.jpg?width=600"
+      }
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "469292",
+      "url": "https://www.uniqlo.com/vn/vi/products/E469292-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
+  },
+  {
+    "id": 16,
+    "name": "Áo Khoác Trucker Vải Denim",
+    "audience": "Nam",
+    "category": "Áo Khoác",
+    "price": 1275000,
+    "originalPrice": 1275000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo khoác denim kiểu trucker, phù hợp mặc ngoài áo thun hoặc áo polo. Thiết kế casual dùng cho nhiều cách phối đồ.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "colors": [
+      {
+        "name": "Xanh navy",
+        "hex": "#29374A",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/488726/item/vngoods_69_488726_3x4.jpg?width=600"
+      }
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "488726",
+      "url": "https://www.uniqlo.com/vn/vi/products/E488726-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
+  },
+  {
+    "id": 17,
+    "name": "Áo Thun Vải Gân Cổ Henley",
     "audience": "Nữ",
-    "category": "Áo Polo",
-    "price": 299000,
-    "originalPrice": 399000,
-    "discount": "-25%",
-    "badge": "Mới về",
-    "rating": 4.8,
-    "sold": 1150,
-    "flashSale": true,
-    "fabric": "Sợi Airycool làm mát tức thì khi chạm da, thấm hút mồ hôi nhanh gấp 2 lần cotton thường.",
+    "category": "Áo Thun",
+    "price": 391000,
+    "originalPrice": 391000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo thun dệt gân với phần cổ Henley cài nút. Dễ phối như một lớp áo cơ bản cho trang phục hằng ngày.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "colors": [
+      {
+        "name": "Tím đậm",
+        "hex": "#51424F",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/487908/item/vngoods_79_487908_3x4.jpg?width=600"
+      }
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "487908",
+      "url": "https://www.uniqlo.com/vn/vi/products/E487908-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
+  },
+  {
+    "id": 18,
+    "name": "Áo Thun Vải Gân Có Mũ",
+    "audience": "Nữ",
+    "category": "Áo Thun",
+    "price": 293000,
+    "originalPrice": 293000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo thun có mũ, bề mặt vải gân tạo điểm nhấn. Kiểu dáng năng động, phù hợp phối với quần casual.",
     "sizes": [
       "S",
       "M",
@@ -90,311 +200,233 @@
     ],
     "colors": [
       {
-        "name": "Kem Nhạt",
-        "hex": "#FAF9F6",
-        "img": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Vàng Hổ Phách",
-        "hex": "#D97706",
-        "img": "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Lá Mạ",
-        "hex": "#2D6A4F",
-        "img": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80"
+        "name": "Xám",
+        "hex": "#95948F",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/488298/item/vngoods_03_488298_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "488298",
+      "url": "https://www.uniqlo.com/vn/vi/products/E488298-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 4,
-    "name": "Áo Khoác Phao Nữ Siêu Nhẹ Giữ Nhiệt XTRA-HEAT",
+    "id": 19,
+    "name": "Áo Khoác Kéo Khóa Dáng Ngắn",
     "audience": "Nữ",
     "category": "Áo Khoác",
-    "price": 399000,
-    "originalPrice": 799000,
-    "discount": "-50%",
-    "badge": "Sale Sốc",
-    "rating": 5,
-    "sold": 860,
-    "flashSale": true,
-    "fabric": "Lõi bông sinh học XTRA-HEAT giữ ấm vượt trội, gấp gọn trong túi nhỏ đi kèm.",
+    "price": 980000,
+    "originalPrice": 980000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo khoác dáng ngắn với khóa kéo phía trước. Tông màu trung tính giúp kết hợp cùng áo thun và quần dài.",
     "sizes": [
+      "XS",
       "S",
       "M",
       "L",
-      "XL"
+      "XL",
+      "XXL"
     ],
     "colors": [
       {
-        "name": "Nâu Vàng Đất",
-        "hex": "#B45309",
-        "img": "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Rừng Sâu",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&w=600&q=80"
+        "name": "Kem tự nhiên",
+        "hex": "#D7D0BB",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/479208/item/vngoods_30_479208_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "479208",
+      "url": "https://www.uniqlo.com/vn/vi/products/E479208-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 5,
-    "name": "Áo Khoác Gió Trẻ Em Chống Nắng & Cản Gió",
+    "id": 20,
+    "name": "Áo Giả Lông Cừu Đan Len Mềm Cổ Tròn",
+    "audience": "Nữ",
+    "category": "Áo Thun",
+    "price": 391000,
+    "originalPrice": 391000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
+    "flashSale": false,
+    "fabric": "Áo cổ tròn với bề mặt giả lông cừu đan len mềm. Phù hợp làm lớp áo mặc thường ngày khi thời tiết mát.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "colors": [
+      {
+        "name": "Tím đậm",
+        "hex": "#51424F",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/470143/item/vngoods_79_470143_3x4.jpg?width=600"
+      }
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "470143",
+      "url": "https://www.uniqlo.com/vn/vi/products/E470143-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
+  },
+  {
+    "id": 21,
+    "name": "AIRism Cotton Áo Thun",
     "audience": "Trẻ em",
-    "category": "Áo Khoác",
-    "price": 249000,
-    "originalPrice": 349000,
-    "discount": "-29%",
-    "badge": "Yêu thích",
-    "rating": 4.9,
-    "sold": 730,
-    "flashSale": true,
-    "fabric": "Chất vải mềm mại an toàn cho làn da nhạy cảm của bé, mũ trùm chắn gió tiện lợi.",
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ],
-    "colors": [
-      {
-        "name": "Vàng Nắng",
-        "hex": "#F59E0B",
-        "img": "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Rừng",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=600&q=80"
-      }
-    ]
-  },
-  {
-    "id": 6,
-    "name": "Quần Jeans Nam Co Giãn 4 Chiều Dáng Slim",
-    "audience": "Nam",
-    "category": "Quần Jeans",
-    "price": 499000,
-    "originalPrice": 599000,
-    "discount": "-17%",
-    "badge": "Bán chạy",
-    "rating": 4.8,
-    "sold": 640,
+    "category": "Áo Thun",
+    "price": 195000,
+    "originalPrice": 195000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
     "flashSale": false,
-    "fabric": "Denim pha sợi Spandex co giãn 4 chiều thoải mái vận động, giữ phom bền màu sau 50 lần giặt.",
+    "fabric": "Áo thun AIRism Cotton cho trẻ em, phom thoải mái. Thành phần chính gồm cotton và polyester, có sử dụng sợi tái chế.",
     "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL",
-      "2XL"
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
     ],
     "colors": [
       {
-        "name": "Xanh Indigo",
-        "hex": "#1E3A8A",
-        "img": "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xám Than",
-        "hex": "#374151",
-        "img": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=600&q=80"
+        "name": "Vàng",
+        "hex": "#E6CF67",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/474592/item/vngoods_41_474592_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "474592",
+      "url": "https://www.uniqlo.com/vn/vi/products/E474592-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 7,
-    "name": "Quần Jeans Nữ Ống Suông Tôn Dáng Bamboo Denim",
-    "audience": "Nữ",
-    "category": "Quần Jeans",
-    "price": 479000,
-    "originalPrice": 569000,
-    "discount": "-16%",
-    "badge": "Mới về",
-    "rating": 4.9,
-    "sold": 590,
+    "id": 22,
+    "name": "AIRism Cotton Áo Thun Kẻ Sọc",
+    "audience": "Trẻ em",
+    "category": "Áo Thun",
+    "price": 195000,
+    "originalPrice": 195000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
     "flashSale": false,
-    "fabric": "Kết hợp sợi Tre Bamboo giúp bề mặt vải denim mềm rũ tự nhiên, thoáng khí.",
+    "fabric": "Áo thun AIRism Cotton họa tiết kẻ sọc cho trẻ em. Kiểu áo cơ bản để phối với quần short hoặc quần dài.",
     "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
     ],
     "colors": [
       {
-        "name": "Xanh Nhạt",
-        "hex": "#60A5FA",
-        "img": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Đậm",
-        "hex": "#1E40AF",
-        "img": "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?auto=format&fit=crop&w=600&q=80"
+        "name": "Xanh lam",
+        "hex": "#7193B4",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/483426/item/vngoods_61_483426_3x4.jpg?width=600"
       }
-    ]
-  },
-  {
-    "id": 8,
-    "name": "Áo Thun Thể Thao Nam Airycool Thoáng Khí",
-    "audience": "Nam",
-    "category": "Đồ Thể Thao",
-    "price": 229000,
-    "originalPrice": 299000,
-    "discount": "-23%",
-    "badge": "Bán chạy",
-    "rating": 4.7,
-    "sold": 890,
-    "flashSale": false,
-    "fabric": "Dệt mắt chim thoáng khí đa chiều, khô nhanh trong 15 phút.",
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL",
-      "2XL"
     ],
-    "colors": [
-      {
-        "name": "Xanh Rừng",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Trắng Sứ",
-        "hex": "#F9FAFB",
-        "img": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80"
-      }
-    ]
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "483426",
+      "url": "https://www.uniqlo.com/vn/vi/products/E483426-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 9,
-    "name": "Bộ Đồ Thể Thao Nữ Bamboo Co Giãn Mềm Mại",
-    "audience": "Nữ",
-    "category": "Đồ Thể Thao",
-    "price": 389000,
-    "originalPrice": 489000,
-    "discount": "-20%",
-    "badge": "Mới về",
-    "rating": 4.9,
-    "sold": 510,
-    "flashSale": false,
-    "fabric": "Sợi tre Bamboo kháng khuẩn tự nhiên, co giãn 4 chiều lý tưởng cho yoga & chạy bộ.",
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ],
-    "colors": [
-      {
-        "name": "Xanh Ngọc Rừng",
-        "hex": "#2D6A4F",
-        "img": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Kem Be",
-        "hex": "#E6E2D8",
-        "img": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"
-      }
-    ]
-  },
-  {
-    "id": 10,
-    "name": "Áo Polo Trẻ Em Sợi Cafe Gia Đình",
+    "id": 23,
+    "name": "Áo Polo Vải Dry Pique",
     "audience": "Trẻ em",
     "category": "Áo Polo",
-    "price": 219000,
-    "originalPrice": 279000,
-    "discount": "-22%",
-    "badge": "BST Gia Đình",
-    "rating": 4.9,
-    "sold": 670,
+    "price": 293000,
+    "originalPrice": 293000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
     "flashSale": false,
-    "fabric": "Đồng bộ thiết kế với áo Polo bố mẹ, chất liệu Sợi Cafe lành tính & bền màu.",
+    "fabric": "Áo polo vải Dry Pique dành cho trẻ em. Cổ polo mang nét gọn gàng, thích hợp cho các bộ đồ casual.",
     "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
     ],
     "colors": [
       {
-        "name": "Xanh Rừng",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Vàng Đất",
-        "hex": "#D97706",
-        "img": "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=600&q=80"
+        "name": "Xanh lá",
+        "hex": "#49745A",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/483434/item/vngoods_55_483434_3x4.jpg?width=600"
       }
-    ]
+    ],
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "483434",
+      "url": "https://www.uniqlo.com/vn/vi/products/E483434-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   },
   {
-    "id": 11,
-    "name": "Đồ Bộ Thể Thao Trẻ Em Cotton Organic",
+    "id": 24,
+    "name": "Áo Thun Vải Gân",
     "audience": "Trẻ em",
-    "category": "Đồ Thể Thao",
-    "price": 259000,
-    "originalPrice": 319000,
-    "discount": "-19%",
-    "badge": "Mới về",
-    "rating": 4.8,
-    "sold": 430,
+    "category": "Áo Thun",
+    "price": 195000,
+    "originalPrice": 195000,
+    "discount": "",
+    "badge": "Tham khảo UNIQLO",
+    "rating": 0,
+    "sold": 0,
     "flashSale": false,
-    "fabric": "100% Cotton Organic đạt chuẩn an toàn dệt may, thấm hút mồ hôi cho bé vui chơi cả ngày.",
+    "fabric": "Áo thun chất liệu vải gân dành cho trẻ em. Thiết kế đơn giản, thuận tiện kết hợp trong trang phục hằng ngày.",
     "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
     ],
     "colors": [
       {
-        "name": "Kem Sữa",
-        "hex": "#FAF9F6",
-        "img": "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Rêu",
-        "hex": "#2D6A4F",
-        "img": "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=600&q=80"
+        "name": "Xanh lam đậm",
+        "hex": "#314861",
+        "img": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/484353/item/vngoods_68_484353_3x4.jpg?width=600"
       }
-    ]
-  },
-  {
-    "id": 12,
-    "name": "Áo Polo Nam Dệt Pique Cổ Phối Màu",
-    "audience": "Nam",
-    "category": "Áo Polo",
-    "price": 349000,
-    "originalPrice": 429000,
-    "discount": "-19%",
-    "badge": "Mới về",
-    "rating": 4.8,
-    "sold": 520,
-    "flashSale": false,
-    "fabric": "Kiểu dệt mắt cá Pique đứng phom sang trọng, bo cổ chống bai dão.",
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL",
-      "2XL"
     ],
-    "colors": [
-      {
-        "name": "Vàng Đất",
-        "hex": "#D97706",
-        "img": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=600&q=80"
-      },
-      {
-        "name": "Xanh Rừng",
-        "hex": "#1B4332",
-        "img": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80"
-      }
-    ]
+    "source": {
+      "brand": "UNIQLO",
+      "productCode": "484353",
+      "url": "https://www.uniqlo.com/vn/vi/products/E484353-000/00",
+      "checkedAt": "2026-11-22",
+      "priceNote": "Giá tham khảo tại thời điểm cập nhật; không đồng bộ trực tiếp với UNIQLO."
+    }
   }
 ]
