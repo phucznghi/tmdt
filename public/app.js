@@ -213,7 +213,7 @@ import {mountFulfillment} from '/checkout.js';
 
             // --- 3. FLASH SALE COUNTDOWN & RENDER ---
             function renderFlashSale() {
-                document.getElementById('flash-sale-grid').innerHTML=PRODUCTS.slice(0,5).map(p=>`<article class="bg-white rounded-2xl border border-cream-border overflow-hidden"><button type="button" data-quickview-id="${p.id}" class="w-full text-left"><img src="${p.colors[0].img}" alt="${p.name}" class="w-full aspect-[3/4] object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG"><div class="p-4"><p class="text-[10px] text-gray-500 mb-2">${p.audience} · Tham khảo UNIQLO</p><h3 class="font-semibold text-sm text-forest line-clamp-2">${p.name}</h3><strong class="block mt-2 text-amberbrand">${formatVND(p.price)}</strong></div></button></article>`).join('');
+                document.getElementById('flash-sale-grid').innerHTML=PRODUCTS.slice(0,5).map(p=>`<article class="bg-white rounded-2xl border border-cream-border overflow-hidden"><button type="button" data-quickview-id="${p.id}" class="w-full text-left"><img src="${p.colors[0].img}" alt="${p.name}" class="w-full aspect-[3/4] object-cover" onerror="this.onerror=null;this.src=window.FALLBACK_IMG"><div class="p-4"><p class="text-[10px] text-gray-500 mb-2">${p.audience} · Mộc Vải</p><h3 class="font-semibold text-sm text-forest line-clamp-2">${p.name}</h3><strong class="block mt-2 text-amberbrand">${formatVND(p.price)}</strong></div></button></article>`).join('');
             }
 
             // --- 4. CATALOG FILTERING, SEARCH & RENDER ---
@@ -373,7 +373,7 @@ import {mountFulfillment} from '/checkout.js';
                                 <div class="pt-1 border-t border-cream-border/70 flex items-center justify-between gap-2">
                                     <div>
                                         <span class="font-display font-extrabold text-sm sm:text-base text-forest block">${formatVND(p.price)}</span>
-                                        <span class="text-[11px] text-gray-400">${p.originalPrice>p.price?formatVND(p.originalPrice):'Giá tham khảo'}</span>
+                                        <span class="text-[11px] text-gray-400">${p.originalPrice>p.price?formatVND(p.originalPrice):'Giá bán'}</span>
                                     </div>
                                     <button type="button" data-quickadd-id="${p.id}" class="quickadd-btn px-3 py-2 rounded-xl bg-forest-50 hover:bg-forest text-forest hover:text-white text-xs font-bold transition cursor-pointer shrink-0">
                                         + Giỏ
@@ -449,7 +449,7 @@ import {mountFulfillment} from '/checkout.js';
                                 <h3 class="font-display font-extrabold text-xl sm:text-2xl text-gray-900 leading-snug">${product.name}</h3>
                                 <div class="flex items-baseline gap-2.5">
                                     <span class="font-display font-extrabold text-2xl text-amberbrand">${formatVND(product.price)}</span>
-                                    <span class="text-sm text-gray-400">${product.originalPrice>product.price?formatVND(product.originalPrice):'Giá tham khảo'}</span>
+                                    <span class="text-sm text-gray-400">${product.originalPrice>product.price?formatVND(product.originalPrice):'Giá bán'}</span>
                                     ${product.discount?`<span class="px-2 py-0.5 rounded bg-amberbrand-50 text-amberbrand text-xs font-extrabold">${product.discount}</span>`:''}
                                 </div>
 
@@ -457,7 +457,7 @@ import {mountFulfillment} from '/checkout.js';
                                 <div class="p-3 rounded-2xl bg-forest-50 border border-forest/15 text-xs text-forest leading-relaxed">
                                     <strong>Thông tin sản phẩm:</strong> ${product.fabric}
                                 </div>
-                                ${product.source?`<p class="text-xs text-gray-500 leading-relaxed">Ảnh & thông tin: UNIQLO Việt Nam · Mã ${product.source.productCode}<br>Giá tham khảo cập nhật ${product.source.checkedAt}; tồn kho trên web là dữ liệu Mộc Vải.<br><a href="${product.source.url}" target="_blank" rel="noopener noreferrer" class="text-forest underline font-semibold">Xem sản phẩm gốc tại UNIQLO ↗</a></p>`:''}
+                                ${product.source?`<p class="text-xs text-gray-500 leading-relaxed"><a href="${product.source.url}" target="_blank" rel="noopener noreferrer" class="text-forest underline font-semibold">Nguồn ảnh sản phẩm ↗</a></p>`:''}
 
                                 <!-- Color Selector -->
                                 <div>
@@ -487,7 +487,7 @@ import {mountFulfillment} from '/checkout.js';
 
                                     <!-- Vietnamese Size Chart Table -->
                                     <div class="${showSizeChart ? 'block' : 'hidden'} mt-3 p-3 rounded-2xl bg-cream border border-cream-border text-[11px]">
-                                        ${product.source?`<p class="text-xs leading-relaxed">Size tham khảo: ${product.sizes.join(', ')}${product.audience==='Trẻ em'?' (theo chiều cao cm)':''}. Kiểm tra số đo chi tiết trên trang UNIQLO của từng mẫu trước khi chọn; không áp dụng bảng size chung cho mọi kiểu áo.</p>`:`<table class="w-full text-left border-collapse">
+                                        ${product.source?`<p class="text-xs leading-relaxed">Size tham khảo: ${product.sizes.join(', ')}${product.audience==='Trẻ em'?' (theo chiều cao cm)':''}. Kiểm tra số đo chi tiết trên trang nguồn của từng mẫu trước khi chọn; không áp dụng bảng size chung cho mọi kiểu áo.</p>`:`<table class="w-full text-left border-collapse">
                                             <thead>
                                                 <tr class="border-b border-cream-border text-forest font-bold">
                                                     <th class="py-1">Size</th><th class="py-1">Chiều cao</th><th class="py-1">Cân nặng</th>

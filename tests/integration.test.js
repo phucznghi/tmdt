@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {createApp,passwordHash} from '../server.js';
-import {importUniqloCatalog} from '../catalog-import.js';
+import {importUniqloCatalog,updateCatalogPrices} from '../catalog-import.js';
 
 const ADMIN={email:'admin@example.test',password:'Admin-password-2026'};
 async function fixture(t,options={}){
@@ -197,7 +197,7 @@ test('upgrade backfills older delivered orders once and point history persists o
 });
 
 test('shipping is free for TP.HCM or pickup, and 30000 outside regardless of order value',async t=>{
- const {client}=await fixture(t);const c=client();await c.register();const p=(await c.call('/products')).find(p=>p.price>=400000),v=p.variants[0];await add(c,v.id,2);
+ const {client}=await fixture(t);const c=client();await c.register();const p=(await c.call('/products')).find(p=>p.price>=300000),v=p.variants[0];await add(c,v.id,2);
  let cart=await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'Hà Nội'});assert.equal(cart.shipping,30000);assert.equal(cart.shippingPending,false);
  const outside=await c.call('/orders','POST',{...checkout('request-outside-shipping-001'),province:'Hà Nội',shipping:0,total:1,quote:cart.quote},201);assert.equal(outside.shipping,30000);assert.equal(outside.total,p.price*2+30000);assert.equal(outside.province,'Hà Nội');
  await add(c,v.id);cart=await c.call('/cart/fulfillment','POST',{fulfillment:'delivery',province:'TP.HCM'});assert.equal(cart.shipping,0);const local=await c.call('/orders','POST',{...checkout('request-local-shipping-001'),quote:cart.quote},201);assert.equal(local.shipping,0);
@@ -400,4 +400,16 @@ test('product names are unique across accents, case, spaces, staff/admin and hid
  const results=await Promise.all(headers.map((h,i)=>fetch(base+'/api/admin/products',{method:'POST',headers:h,body:JSON.stringify({...body,name:i?'TEN CUNG LUC':'Tên cùng lúc'})})));
  assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);
  assert.equal(app.db.prepare('SELECT name FROM products').all().filter(v=>normalizeText(v.name)==='ten cung luc').length,1);
+});
+
+
+test('catalog price update caps display prices and preserves orders, stock and accounts',async t=>{
+ const {client,app}=await fixture(t);const buyer=client();await buyer.register();
+ const p=(await buyer.call('/products'))[0],v=p.variants[0];app.db.prepare('UPDATE products SET price=588000 WHERE id=?').run(p.id);
+ await add(buyer,v.id);const order=await buyer.call('/orders','POST',checkout('before-catalog-price-update'),201);assert.equal(order.total,588000);
+ const stock=app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,users=app.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+ assert.deepEqual(updateCatalogPrices(app.db),{updated:1});assert.deepEqual(updateCatalogPrices(app.db),{updated:0});
+ const catalog=await buyer.call('/products');assert.equal(catalog.length,12);assert.ok(catalog.every(x=>x.price<=400000&&x.badge==='Mới về'));
+ assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,stock);assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM users').get().n,users);
+ const saved=(await buyer.call('/orders'))[0];assert.equal(saved.total,588000);assert.equal(saved.items[0].price,588000);
 });

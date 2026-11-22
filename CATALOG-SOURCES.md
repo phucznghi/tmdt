@@ -22,3 +22,5 @@ Giá đối chiếu tại các danh mục [polo nam](https://www.uniqlo.com/vn/v
 Ảnh dùng URL CDN chính thức image.uniqlo.com đã kiểm tra HTTP 200 cho cả 12 mẫu. Mỗi mẫu chọn một màu có trên trang nguồn; size là lựa chọn tham khảo trên nguồn, không xác nhận còn hàng UNIQLO. Tồn kho khởi tạo 20 mỗi biến thể chỉ là số lượng demo của Mộc Vải. Giá và màu/size thực tế tại nguồn có thể thay đổi.
 
 Không nhập đánh giá, lượt bán hay chương trình Flash Sale giả. Nội dung phí ship, đổi trả, tài khoản và đặt hàng vẫn thuộc quy trình của bản minh họa Mộc Vải, không sao chép chính sách UNIQLO.
+
+Giá trong bảng trên là dữ liệu nguồn lưu để đối chiếu. Giá bán demo Mộc Vải đã được chủ dự án yêu cầu điều chỉnh còn 149.000–399.000đ, không phải giá bán UNIQLO; xem seed.json cho giá hiện tại. Giao diện đã bỏ nhãn Tham khảo UNIQLO theo yêu cầu, giữ link nguồn ảnh trong xem nhanh.

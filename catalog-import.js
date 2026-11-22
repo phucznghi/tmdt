@@ -21,3 +21,21 @@ export function importUniqloCatalog(db){
   db.exec('COMMIT');return {added,archived};
  }catch(error){db.exec('ROLLBACK');throw error;}
 }
+
+// Explicit update: never reset existing prices automatically on server startup.
+export function updateCatalogPrices(db){
+ const seed=JSON.parse(readFileSync(new URL('./seed.json',import.meta.url),'utf8'));let updated=0;
+ db.exec('BEGIN IMMEDIATE');
+ try{
+  const actor=db.prepare("SELECT id FROM users WHERE role='admin' AND active=1 ORDER BY id LIMIT 1").get()?.id;
+  for(const item of seed){
+   const row=db.prepare("SELECT * FROM products WHERE json_extract(metadata,'$.source.productCode')=?").get(item.source.productCode);if(!row)continue;
+   const metadata=JSON.parse(row.metadata);const next={...metadata,badge:item.badge,originalPrice:item.price,discount:'',source:{...metadata.source,priceNote:item.source.priceNote}};
+   if(row.price===item.price&&JSON.stringify(metadata)===JSON.stringify(next))continue;
+   if(!actor)throw new Error('Cần tài khoản admin hoạt động để cập nhật giá.');
+   db.prepare('UPDATE products SET price=?,metadata=? WHERE id=?').run(item.price,JSON.stringify(next),row.id);updated++;
+  }
+  if(updated)db.prepare('INSERT INTO audit(actor,action,target,created_at) VALUES(?,?,?,?)').run(actor,'catalog.prices',JSON.stringify({updated,maxPrice:399000}),new Date().toISOString());
+  db.exec('COMMIT');return {updated};
+ }catch(error){db.exec('ROLLBACK');throw error;}
+}

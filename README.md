@@ -204,3 +204,7 @@ Tìm kiếm ở cửa hàng, quản trị, kho/phiếu nhập dùng chung chuẩ
 Tạo/sửa sản phẩm bị từ chối HTTP 409 nếu tên sau chuẩn hóa trùng một sản phẩm khác, kể cả sản phẩm ngừng bán hoặc còn hàng trong kho. Kiểm tra nằm trong transaction của server; hai yêu cầu đồng thời không tạo được hai tên trùng. Form báo ngay sản phẩm có sẵn và tổng tồn khả dụng, cho mở danh sách để xem. Tên không được tái sử dụng để tạo mã hàng thứ hai chỉ bằng đổi dấu/hoa thường/khoảng trắng. Khi sửa chính sản phẩm đó có thể giữ tên hoặc đổi cách viết.
 
 Nhập thêm hàng: mở Kho & nhập hàng, lập phiếu và tìm/chọn biến thể hiện có bằng tên không dấu. Mỗi dòng hiển thị tồn khả dụng, đang giữ cho đơn, ước tính tại kho và khả dụng dự kiến sau số lượng nhập. Đây là số tại thời điểm tải dữ liệu; kho thật chỉ được cập nhật một lần khi xác nhận nhận hàng. Phiếu nhập không tạo sản phẩm mới. Nhân viên chỉ xem tồn tại danh sách sản phẩm; nhập kho vẫn thuộc admin.
+
+### Giá bán danh mục Mộc Vải
+
+Theo yêu cầu mới, 12 mẫu có giá bán demo 149.000–399.000đ, nhãn Mới về; giao diện bỏ dòng Tham khảo UNIQLO và dùng Giá bán. Nguồn ảnh được giữ bằng liên kết nhỏ ở xem nhanh và tài liệu nguồn. Database cũ chạy `npm.cmd run catalog:prices` để áp dụng giá/nhãn cho đúng 12 mã nguồn, không đổi tồn, tài khoản hoặc giá snapshot của đơn đã đặt. Chạy lại không cập nhật trùng; server không tự ép giá khi khởi động.
