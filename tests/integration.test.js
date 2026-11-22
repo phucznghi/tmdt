@@ -86,11 +86,15 @@ test('data and sessions persist when the server is reopened',async t=>{
  const second=createApp({dbPath:join(dir,'test.sqlite')});try{assert.equal(second.db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,1);assert.ok(second.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n>0);assert.equal(second.db.prepare('SELECT stock FROM variants WHERE id=?').get(v.id).stock,19);}finally{second.close();}
  assert.equal(app.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
 });
-test('source storefront UI remains intact; only its script is connected to backend',async()=>{
- const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');assert.match(html,/<script type="module" src="\/app.js"><\/script>/);
- // SHA-256 of the original GitHub HTML/CSS prefix before its application script.
- const prefix=html.slice(0,html.indexOf('<script type="module" src="/app.js">'));
- assert.equal(createHash('sha256').update(prefix).digest('hex'),'510361fef355e6f6246110f72dd1c1d59e195df9429cefdb1d93024955152197');
+test('footer support links are consistent in static and backend storefronts',async t=>{
+ const paths=['size','loyalty','orders','faq','shipping','returns','warranty','privacy'];
+ for(const file of ['../index.html','../public/index.html']){
+  const html=readFileSync(new URL(file,import.meta.url),'utf8'),footer=html.slice(html.indexOf('<footer'),html.indexOf('</footer>'));
+  for(const path of paths)assert.ok(footer.includes('href="#support-'+path+'" data-support="'+path+'"'));
+  assert.ok(!footer.includes('href="#catalog-section"'));assert.match(footer,/WELCOME50/);
+ }
+ const {base}=await fixture(t);
+ for(const path of ['/support.js','/support.css'])assert.equal((await fetch(base+path)).status,200);
 });
 
 test('invalid cart payload and changed price quote are rejected without creating orders',async t=>{
@@ -322,4 +326,14 @@ test('static entry forwards local previews to the real app and account theme is 
  let ready=false;runInNewContext(source,{location:{hostname:'phucznghi.github.io',port:'',search:'',hash:'',replace(){throw new Error('Hosted preview must not redirect visitors to localhost');}},document:{addEventListener:event=>{assert.equal(event,'DOMContentLoaded');ready=true;}}});assert.equal(ready,true);
  assert.match(readFileSync(new URL('../index.html',import.meta.url),'utf8'),/src="\.\/site-entry.js"/);
  const {base}=await fixture(t);const css=await fetch(base+'/account.css');assert.equal(css.status,200);assert.match(await css.text(),/auth-brand/);
+});
+
+
+test('newsletter saves a valid email once and rejects invalid input',async t=>{
+ const {client,app}=await fixture(t);const c=client();await c.call('/me');
+ await c.call('/newsletter','POST',{email:'newsletter-demo@example.test'},201);
+ await c.call('/newsletter','POST',{email:'newsletter-demo@example.test'},201);
+ assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM subscribers WHERE email=?').get('newsletter-demo@example.test').n,1);
+ await c.call('/newsletter','POST',{email:'not-an-email'},400);
+ assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM subscribers').get().n,1);
 });

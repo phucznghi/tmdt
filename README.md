@@ -102,7 +102,7 @@ Không mở trực tiếp `index.html` bằng `file://`. Website cần chạy qu
 
 ## Giữ nguyên UI index
 
-`public/index.html` giữ nguyên phần HTML/CSS của bản gốc trước script ứng dụng. Thiết kế trang chủ, header, menu, banner, catalog, giỏ hàng và footer được giữ; giao diện đăng nhập riêng đã cập nhật theo màu sắc/logo/khung bo tròn của cửa hàng. Kiểm thử có SHA-256 của phần UI gốc để phát hiện chỉnh sửa ngoài ý muốn.
+`public/index.html` giữ nguyên phần HTML/CSS của bản gốc trước script ứng dụng. Thiết kế trang chủ, header, menu, banner, catalog, giỏ hàng và footer được giữ; giao diện đăng nhập riêng đã cập nhật theo màu sắc/logo/khung bo tròn của cửa hàng. Kiểm thử đối chiếu các liên kết hỗ trợ trên bản tĩnh và bản backend; giao diện chân trang đã được hoàn thiện theo yêu cầu mới.
 
 - `public/app.js` giữ các hàm dựng giao diện sản phẩm, bộ lọc, banner và giỏ hàng; thay dữ liệu và nghiệp vụ bằng API.
 - Nút tài khoản dẫn đến `/account` khi chưa đăng nhập; các mục hồ sơ/đơn hàng mở trang tài khoản riêng. Modal đăng nhập Google giả lập trong HTML gốc không còn được kích hoạt.
@@ -184,3 +184,9 @@ Kịch bản demo:
 Khi mở index gốc bằng Live Server trên localhost/127.0.0.1 (ví dụ cổng 5500), `site-entry.js` tự chuyển sang cùng hostname ở cổng 3000, giữ query/hash. Cần chạy `npm.cmd start` trước; Live Server không thay thế backend. Trang `/account` và `/account?admin=1` dùng chung giao diện logo Mộc Vải, màu kem/xanh/cam, ô nhập và nút bo tròn, với hai lựa chọn Khách hàng và Nhân viên / Quản trị.
 
 Trên GitHub Pages, nút đăng nhập mở hai lựa chọn và thông báo chưa có máy chủ nếu `MOC_VAI_BACKEND_URL` trong `site-entry.js` còn trống; không giả lập đăng nhập Google. Khi đã triển khai backend online, đặt URL HTTPS của web Node.js vào biến này để hai lựa chọn dẫn đến cùng hệ thống thật. Không trỏ người xem GitHub Pages sang localhost của họ.
+
+### Hỗ trợ và chính sách ở chân trang
+
+Tám mục chân trang mở hộp thoại hỗ trợ dùng chung ở bản tĩnh và backend: size, tích điểm, tra cứu đơn, FAQ, giao hàng, đổi trả, bảo hành đường may và dữ liệu cá nhân. Hộp thoại hỗ trợ bàn phím, Escape, nút đóng và link trực tiếp dạng `#support-shipping`. Tra cứu đơn/điểm/hồ sơ dẫn đến đăng nhập; bản tĩnh chưa có URL backend sẽ thông báo cần kết nối máy chủ thay vì tạo đăng nhập giả.
+
+Bảng size là tham khảo chung. Nội dung đổi trả/bảo hành hướng dẫn tiếp nhận trực tiếp tại cửa hàng, không tự duyệt, đặt lịch lấy hàng hay thực hiện hoàn tiền. Footer dùng địa chỉ cửa hàng đã cung cấp thay cho hotline mẫu chưa được xác nhận. Newsletter hiển thị trạng thái ngay dưới form; backend lưu email, chống trùng, chưa gửi email tự động. Bản GitHub Pages không có backend thông báo chưa lưu email. WELCOME50 được ghi đúng điều kiện hiện tại (đơn từ 99.000đ), không hứa mã chỉ dành lần đầu.

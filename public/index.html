@@ -62,6 +62,8 @@
             animation: fadeInScale 0.2s ease-out forwards;
         }
     </style>
+<link rel="stylesheet" href="/support.css">
+<script src="/support.js" data-runtime="server" defer></script>
 </head>
 <body class="antialiased selection:bg-forest selection:text-white">
 
@@ -720,17 +722,17 @@
                     <p class="text-xs sm:text-sm text-cream/80 leading-relaxed">
                         Thương hiệu thời trang ứng dụng Việt Nam tiên phong ứng dụng chất liệu xanh: Sợi Cafe, Airycool và sợi Tre Bamboo. Đẹp tự nhiên, bền vững mỗi ngày.
                     </p>
-                    <p class="text-xs text-amberbrand-light font-semibold">Hotline CSKH: 1800 2086 (Miễn phí)</p>
+                    <p class="text-xs text-amberbrand-light font-semibold">Cửa hàng: 970 Quang Trung, TP.HCM</p>
                 </div>
 
                 <!-- Col 2: Customer Support -->
                 <div>
                     <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Hỗ Trợ Khách Hàng</h4>
                     <ul class="space-y-2.5 text-xs sm:text-sm text-cream/80">
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Hướng dẫn chọn size chuẩn</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Chính sách khách hàng thân thiết</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Tra cứu đơn hàng trực tuyến</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Câu hỏi thường gặp (FAQ)</a></li>
+                        <li><a href="#support-size" data-support="size" class="hover:text-amberbrand-light transition">Hướng dẫn chọn size chuẩn</a></li>
+                        <li><a href="#support-loyalty" data-support="loyalty" class="hover:text-amberbrand-light transition">Chính sách khách hàng thân thiết</a></li>
+                        <li><a href="#support-orders" data-support="orders" class="hover:text-amberbrand-light transition">Tra cứu đơn hàng trực tuyến</a></li>
+                        <li><a href="#support-faq" data-support="faq" class="hover:text-amberbrand-light transition">Câu hỏi thường gặp (FAQ)</a></li>
                     </ul>
                 </div>
 
@@ -738,17 +740,17 @@
                 <div>
                     <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Chính Sách Mộc Vải</h4>
                     <ul class="space-y-2.5 text-xs sm:text-sm text-cream/80">
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Miễn phí vận chuyển đơn từ 498K</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Đổi trả tận nơi trong 15 ngày</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Bảo hành đường may trọn đời</a></li>
-                        <li><a href="#catalog-section" class="hover:text-amberbrand-light transition">Chính sách bảo mật thông tin</a></li>
+                        <li><a href="#support-shipping" data-support="shipping" class="hover:text-amberbrand-light transition">Miễn phí giao trong TP.HCM</a></li>
+                        <li><a href="#support-returns" data-support="returns" class="hover:text-amberbrand-light transition">Đổi trả tận nơi trong 15 ngày</a></li>
+                        <li><a href="#support-warranty" data-support="warranty" class="hover:text-amberbrand-light transition">Bảo hành đường may trọn đời</a></li>
+                        <li><a href="#support-privacy" data-support="privacy" class="hover:text-amberbrand-light transition">Chính sách bảo mật thông tin</a></li>
                     </ul>
                 </div>
 
                 <!-- Col 4: Newsletter Signup -->
                 <div>
                     <h4 class="font-display font-bold text-sm uppercase tracking-wider text-white mb-4">Đăng Ký Nhận Ưu Đãi</h4>
-                    <p class="text-xs sm:text-sm text-cream/80 mb-3">Nhận ngay voucher <strong>50.000đ</strong> cho đơn hàng đầu tiên và cập nhật BST mới sớm nhất.</p>
+                    <p class="text-xs sm:text-sm text-cream/80 mb-3">Nhận ngay voucher <strong>50.000đ</strong> cho đơn từ 99.000đ với mã WELCOME50 và đăng ký cập nhật BST mới.</p>
                     <form id="newsletter-form" class="flex gap-2">
                         <input id="newsletter-email" type="email" required placeholder="Email của bạn..." class="flex-1 min-w-0 px-3.5 py-2.5 rounded-full bg-white/10 border border-white/20 text-xs text-white placeholder-cream/60 focus:outline-none focus:border-amberbrand-light">
                         <button type="submit" class="px-4 py-2.5 rounded-full bg-amberbrand hover:bg-amberbrand-dark text-white text-xs font-bold shrink-0 transition cursor-pointer">Đăng ký</button>

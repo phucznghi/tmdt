@@ -786,12 +786,6 @@ import {mountFulfillment} from '/checkout.js';
                     orderSuccessView.classList.remove('hidden');showToast('Đơn hàng đã được lưu.');
                 },async e=>{if(await redirectForLogin(e,'/account?checkout=1'))return;showToast(e.message);try{acceptCart(await api('/cart'));}catch{}});
             });
-            document.getElementById('newsletter-form').addEventListener('submit',e=>{
-                e.preventDefault();busy(e.target.querySelector('button'),async()=>{
-                    await api('/newsletter','POST',{email:document.getElementById('newsletter-email').value});
-                    e.target.reset();showToast('Đã đăng ký nhận ưu đãi.');
-                },e=>showToast(e.message));
-            });
             // Global ESC & Outside Click Cleanup
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
