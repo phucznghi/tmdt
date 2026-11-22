@@ -1,3 +1,5 @@
+> Bản online mới dùng Firebase Spark tại https://store-clothes-tmdt.web.app/. Xem [FIREBASE-DEPLOYMENT.md](FIREBASE-DEPLOYMENT.md) cho kiến trúc, phân quyền và vận hành Firebase. Các mô tả Node.js, SQL, cookie, CSRF, healthcheck và backup SQLite bên dưới áp dụng cho bản cục bộ. Các đường dẫn API được bộ điều hợp Firebase ánh xạ sang SDK trong trình duyệt, không phải endpoint HTTP trên Hosting.
+
 # Mộc Vải — phần 5, 6, 7
 
 Bản triển khai từ repo `phucznghi/tmdt`, nhánh `main`, commit `229d3b47ee97605139ad0b43782914834d49291f` tại thời điểm kiểm tra. Giữ nguyên HTML/CSS và bố cục trang chủ. Chỉ thay script mô phỏng bằng script gọi backend; trang tài khoản và quản trị nằm riêng.
@@ -29,8 +31,8 @@ Hệ thống có ba vai trò, kiểm tra quyền tại backend:
 | --- | --- | --- | --- |
 | Giỏ hàng và đặt mua online | Có | Không | Không |
 | Xem tất cả đơn, xử lý trạng thái và vận chuyển | Không | Có | Có |
-| Thêm sản phẩm mới | Không | Có | Có |
-| Sửa sản phẩm / tồn kho, quản lý khách hàng | Không | Không | Có |
+| Thêm và sửa thông tin sản phẩm, ảnh, màu/size | Không | Có | Có |
+| Sửa số tồn, nhập kho, quản lý khách hàng | Không | Không | Có |
 | Xem và in bill có tổng giá trị đơn hàng | Không | Có | Có |
 | Báo cáo doanh thu, tăng trưởng | Không | Không | Có |
 | Lập / xác nhận phiếu nhập và xem giá nhập, báo cáo nhập kho | Không | Không | Có |
@@ -46,7 +48,7 @@ Hệ thống có ba vai trò, kiểm tra quyền tại backend:
 
 Nhân viên có thể xác nhận, chuẩn bị, giao và hoàn tất đơn theo quy trình hiện có; có thể hủy trước khi giao cho đơn vị vận chuyển. Hủy đơn đã trả tiền chỉ tạo yêu cầu chờ hoàn tiền, không xác nhận đã hoàn tiền. Admin thực hiện bước đối soát riêng.
 
-Nhân viên được tìm/xem danh sách và thêm sản phẩm mới (gồm biến thể, tồn kho ban đầu), nhưng không sửa sản phẩm hoặc tồn kho đã có. Admin/nhân viên dùng khu vực quản lý; giỏ hàng và đặt mua chỉ dành cho khách hàng, bị kiểm tra cả ở backend.
+Nhân viên được tìm/xem danh sách, thêm và sửa thông tin sản phẩm, ảnh, màu và size. Mã biến thể được giữ khi sửa màu/size. Nhân viên không sửa số tồn; sản phẩm/biến thể mới do nhân viên tạo có tồn 0, admin nhập kho hoặc điều chỉnh số tồn. Admin/nhân viên dùng khu vực quản lý; giỏ hàng và đặt mua chỉ dành cho khách hàng, bị kiểm tra cả ở backend.
 
 ## Kho và nhập hàng
 

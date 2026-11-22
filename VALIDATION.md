@@ -1,3 +1,9 @@
+## Kiểm chứng mới ngày 23/11/2026
+
+43/43 ca backend cục bộ đạt sau cập nhật quyền nhân viên. Bộ Firebase hiện đạt 28/28 ca, gồm sửa thông tin/màu/size giữ nguyên ID và tồn, từ chối nhân viên đổi số tồn hoặc tạo biến thể với tồn dương. 18 kiểm tra HTTPS đã đạt trên Hosting, minh chứng ghi tại hồ sơ báo cáo. Các ghi chú bên dưới là lịch sử kiểm tra phiên bản trước, có thể mô tả quyền nhân viên cũ.
+
+> Bản online mới dùng Firebase Spark tại https://store-clothes-tmdt.web.app/. Xem [FIREBASE-DEPLOYMENT.md](FIREBASE-DEPLOYMENT.md) cho kiến trúc, phân quyền và vận hành Firebase. Các mô tả Node.js, SQL, cookie, CSRF, healthcheck và backup SQLite bên dưới áp dụng cho bản cục bộ. Các đường dẫn API được bộ điều hợp Firebase ánh xạ sang SDK trong trình duyệt, không phải endpoint HTTP trên Hosting.
+
 # Kết quả xác minh
 
 Ngày cập nhật kiểm tra: 22/11/2026 (Asia/Saigon).

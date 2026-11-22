@@ -26,7 +26,7 @@
   form.addEventListener('submit',async e=>{e.preventDefault();e.stopImmediatePropagation();const button=form.querySelector('button');if(button.disabled)return;
    if(!server){feedback.textContent='Bản xem trước chưa kết nối máy chủ nên chưa lưu email. Mã WELCOME50 giảm 50.000đ cho đơn từ 99.000đ khi mua trên web đầy đủ.';return;}
    button.disabled=true;feedback.textContent='Đang đăng ký…';try{
-    const session=await fetch('/api/me');if(!session.ok)throw Error('Không kết nối được máy chủ. Vui lòng thử lại.');const {csrf}=await session.json();
+    if(/store-clothes-tmdt\.(web\.app|firebaseapp\.com)/.test(location.hostname)){const {api}=await import('/shared.js');await api('/newsletter','POST',{email:document.getElementById('newsletter-email').value});feedback.textContent='Đã lưu email nhận ưu đãi.';form.reset();return;}const session=await fetch('/api/me');if(!session.ok)throw Error('Không kết nối được máy chủ. Vui lòng thử lại.');const {csrf}=await session.json();
     const response=await fetch('/api/newsletter',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({email:document.getElementById('newsletter-email').value})});const data=await response.json();if(!response.ok)throw Error(data.error||'Chưa đăng ký được. Vui lòng thử lại.');
     feedback.textContent='Đã lưu email nhận ưu đãi. Dùng mã WELCOME50 để giảm 50.000đ cho đơn từ 99.000đ. Hiện chưa gửi email tự động.';form.reset();
    }catch(error){feedback.textContent=error.message;}finally{button.disabled=false;}

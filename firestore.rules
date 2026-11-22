@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed(){return request.auth != null;}
+  function user(){return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;}
+  function active(){return signed() && user().active == true && request.auth.token.auth_time * 1000 >= user().access_changed_at.toMillis();}
+  function admin(){return active() && user().role == 'admin';}
+  function internal(){return active() && user().role in ['admin','staff'];}
+  function customer(){return active() && user().role == 'customer';}
+  function changedOnly(keys){return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);}
+  function lineValid(o,i){
+   let a=o.items[i];
+   let v=get(/databases/$(database)/documents/variants/$(a.variant_id)).data;
+   let after=getAfter(/databases/$(database)/documents/variants/$(a.variant_id)).data;
+   return a.keys().hasOnly(['variant_id','product_id','name','color','size','img','price','qty']) && a.qty is int && a.qty>0 && a.qty<=99 &&
+     v.active==true && a.product_id==v.product_id && a.name==v.name && a.color==v.color && a.size==v.size && a.img==v.img && a.price==v.price &&
+     after.stock==v.stock-a.qty && after.stock>=0 && after.last_order==o.id;
+  }
+  function amount(o,i){return o.items.size()>i?o.items[i].price*o.items[i].qty:0;}
+  function uniqueItems(o){return (o.items.size()<2||o.items[0].variant_id!=o.items[1].variant_id) && (o.items.size()<3||(o.items[0].variant_id!=o.items[2].variant_id&&o.items[1].variant_id!=o.items[2].variant_id)) && (o.items.size()<4||(o.items[0].variant_id!=o.items[3].variant_id&&o.items[1].variant_id!=o.items[3].variant_id&&o.items[2].variant_id!=o.items[3].variant_id));}
+  function orderValid(o,id){
+   return customer() && o.keys().hasOnly(['id','user_id','customer_email','request_key','receiver','phone','address','subtotal','shipping','discount','total','method','payment_status','status','carrier','tracking','fulfillment','province','store_address','created_at','items','history','payments','promo']) &&
+    o.id==id && o.user_id==request.auth.uid && o.customer_email==request.auth.token.email && o.request_key is string && o.request_key.size()>=16 &&
+    o.receiver is string && o.receiver.size()>=2 && o.receiver.size()<=100 && o.phone is string && o.phone.matches('^(0[0-9]{9}|[+]84[0-9]{9})$') &&
+    o.address is string && o.address.size()>=10 && o.address.size()<=500 && o.method=='cod' && o.payment_status=='unpaid' && o.status=='pending' && o.carrier=='' && o.tracking=='' && o.history==[] && o.payments==[] && o.created_at==request.time &&
+    o.fulfillment in ['pickup','delivery'] && o.store_address=='970 Quang Trung, TP.HCM' && o.province in ['TP.HCM','Hà Nội','Hải Phòng','Đà Nẵng','Huế','Cần Thơ','Cao Bằng','Điện Biên','Lai Châu','Sơn La','Lạng Sơn','Quảng Ninh','Thanh Hóa','Nghệ An','Hà Tĩnh','Tuyên Quang','Lào Cai','Thái Nguyên','Phú Thọ','Bắc Ninh','Hưng Yên','Ninh Bình','Quảng Trị','Quảng Ngãi','Gia Lai','Khánh Hòa','Lâm Đồng','Đắk Lắk','Đồng Nai','Tây Ninh','Vĩnh Long','Đồng Tháp','An Giang','Cà Mau'] &&
+    (o.fulfillment!='pickup'||(o.province=='TP.HCM'&&o.address==o.store_address)) &&
+    o.items is list && o.items.size()>=1 && o.items.size()<=3 && uniqueItems(o) && lineValid(o,0) && (o.items.size()<2||lineValid(o,1)) && (o.items.size()<3||lineValid(o,2)) && (o.items.size()<4||lineValid(o,3)) &&
+    o.subtotal==amount(o,0)+amount(o,1)+amount(o,2)+amount(o,3) && o.shipping==(o.fulfillment=='pickup'||o.province=='TP.HCM'?0:30000) &&
+    o.promo in ['','WELCOME50'] && o.discount==(o.promo=='WELCOME50'&&o.subtotal>=99000?50000:0) && o.total==o.subtotal+o.shipping-o.discount;
+  }
+  function orderItemQty(o,id){return (o.items.size()>0&&o.items[0].variant_id==id?o.items[0].qty:0)+(o.items.size()>1&&o.items[1].variant_id==id?o.items[1].qty:0)+(o.items.size()>2&&o.items[2].variant_id==id?o.items[2].qty:0)+(o.items.size()>3&&o.items[3].variant_id==id?o.items[3].qty:0);}
+  function stockForOrder(id){
+   let key=request.resource.data.last_order;
+   let next=getAfter(/databases/$(database)/documents/orders/$(key)).data;
+   return next.user_id==request.auth.uid && changedOnly(['stock','last_order']) && request.resource.data.stock is int && request.resource.data.stock>=0 &&
+    ((next.created_at==request.time && next.status=='pending' && orderItemQty(next,id)>0 && request.resource.data.stock==resource.data.stock-orderItemQty(next,id)) ||
+     (next.cancelled_at==request.time && next.status=='cancelled' && orderItemQty(next,id)>0 && request.resource.data.stock==resource.data.stock+orderItemQty(next,id)));
+  }
+  function nextStatus(o,n){return (o.status=='pending'&&n in ['confirmed','cancelled'])||(o.status=='confirmed'&&n in ['preparing','cancelled'])||(o.status=='preparing'&&n in [o.fulfillment=='pickup'?'ready':'shipping','cancelled'])||(o.status=='ready'&&n in ['delivered','cancelled'])||(o.status=='shipping'&&n=='delivered');}
+  function returnedLine(o,i){let a=o.items[i];return getAfter(/databases/$(database)/documents/variants/$(a.variant_id)).data.stock==get(/databases/$(database)/documents/variants/$(a.variant_id)).data.stock+a.qty && getAfter(/databases/$(database)/documents/variants/$(a.variant_id)).data.last_order==o.id;}
+  function returnedStock(o){return returnedLine(o,0)&&(o.items.size()<2||returnedLine(o,1))&&(o.items.size()<3||returnedLine(o,2))&&(o.items.size()<4||returnedLine(o,3));}
+  function deliveredPoints(o){let p=getAfter(/databases/$(database)/documents/loyalty_points/$(o.id)).data;return p.user_id==o.user_id&&p.order_id==o.id&&p.points==int((o.subtotal-o.discount) / 10000);}
+  function validPoints(id){let o=getAfter(/databases/$(database)/documents/orders/$(id)).data;return request.resource.data.user_id==o.user_id && o.status=='delivered' && request.resource.data.points==int((o.subtotal - o.discount) / 10000);}
+  match /users/{uid} {
+   allow get: if signed() && (uid==request.auth.uid||internal());
+   allow list: if admin();
+   allow create: if signed() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['id','email','name','role','phone','address','active','created_at','access_changed_at']) && request.resource.data.id==uid && request.resource.data.email==request.auth.token.email && request.resource.data.role=='customer' && request.resource.data.active==true && request.resource.data.created_at==request.time && request.resource.data.access_changed_at==timestamp.value(0) && request.resource.data.name is string && request.resource.data.name.size()>=2 && request.resource.data.name.size()<=100;
+   allow update: if (active()&&uid==request.auth.uid&&changedOnly(['name','phone','address']) && request.resource.data.name is string && request.resource.data.name.size()>=2) ||
+    (admin()&&uid!=request.auth.uid&&resource.data.role!='admin'&&request.resource.data.role in ['customer','staff','admin']&&request.resource.data.active is bool&&changedOnly(['role','active','access_changed_at'])&&request.resource.data.access_changed_at==request.time);
+  }
+  match /products/{id} {
+   allow read: if resource.data.active==true||internal();
+   allow create: if internal() && request.resource.data.price is int && request.resource.data.price>=1000 && request.resource.data.variants is list && request.resource.data.variants.size()<=40;
+   allow update: if internal();
+  }
+  match /product_names/{key} {allow read,create,delete: if internal();allow update: if internal()&&request.resource.data.product_id==resource.data.product_id;}
+  match /variants/{id} {
+   allow read: if resource.data.active==true||internal();
+   allow create: if internal() && request.resource.data.stock is int && request.resource.data.stock>=0 && request.resource.data.stock<=100000 && (user().role=='admin'||request.resource.data.stock==0) && request.resource.data.price==getAfter(/databases/$(database)/documents/products/$(string(request.resource.data.product_id))).data.price && request.resource.data.name==getAfter(/databases/$(database)/documents/products/$(string(request.resource.data.product_id))).data.name;
+   allow update: if active() && (user().role=='admin' || (user().role=='customer' && stockForOrder(id)) || (user().role=='staff'&&changedOnly(['name','price','color','size','img','hex','active'])&&request.resource.data.price==getAfter(/databases/$(database)/documents/products/$(string(resource.data.product_id))).data.price&&request.resource.data.name==getAfter(/databases/$(database)/documents/products/$(string(resource.data.product_id))).data.name) || (user().role=='staff'&&changedOnly(['stock','last_order'])&&getAfter(/databases/$(database)/documents/orders/$(request.resource.data.last_order)).data.status=='cancelled'&&getAfter(/databases/$(database)/documents/orders/$(request.resource.data.last_order)).data.cancelled_at==request.time&&request.resource.data.stock==resource.data.stock+orderItemQty(getAfter(/databases/$(database)/documents/orders/$(request.resource.data.last_order)).data,id)));
+  }
+  match /orders/{id} {
+   allow get: if internal()||(active()&&(!exists(/databases/$(database)/documents/orders/$(id))||resource.data.user_id==request.auth.uid));
+   allow list: if internal()||(active()&&resource.data.user_id==request.auth.uid);
+   allow create: if orderValid(request.resource.data,id);
+   allow update: if (customer()&&resource.data.user_id==request.auth.uid&&resource.data.status=='pending'&&request.resource.data.status=='cancelled'&&changedOnly(['status','history','cancelled_at'])&&request.resource.data.cancelled_at==request.time&&returnedStock(resource.data)) ||
+     (internal()&&nextStatus(resource.data,request.resource.data.status)&&changedOnly(['status','history','carrier','tracking','cancelled_at']) && (request.resource.data.status!='shipping'||(request.resource.data.carrier.size()>0&&request.resource.data.tracking.size()>0)) && (request.resource.data.status!='cancelled'||(request.resource.data.cancelled_at==request.time&&returnedStock(resource.data))) && (request.resource.data.status!='delivered'||deliveredPoints(resource.data))) ||
+     (admin()&&changedOnly(['payment_status','payments'])&&((resource.data.payment_status=='unpaid'&&request.resource.data.payment_status=='paid'&&resource.data.status=='delivered')||(resource.data.payment_status=='paid'&&request.resource.data.payment_status=='refunded')));
+  }
+  match /loyalty_points/{id} {
+   allow get: if internal()||(active()&&(!exists(/databases/$(database)/documents/loyalty_points/$(id))||resource.data.user_id==request.auth.uid));
+   allow list: if internal()||(active()&&resource.data.user_id==request.auth.uid);
+   allow create: if internal() && request.resource.data.order_id==id && validPoints(id) && request.resource.data.keys().hasOnly(['order_id','user_id','eligible_amount','points','created_at']);
+  }
+  match /inventory_receipts/{id} {allow read,create,update: if admin();}
+  match /stock_movements/{id} {allow read: if admin();allow create: if internal();}
+  match /audit/{id} {allow read: if admin();allow create: if internal()&&request.resource.data.actor==request.auth.uid;}
+  match /subscribers/{id} {allow create: if request.resource.data.keys().hasOnly(['email','created_at'])&&request.resource.data.email==id&&id.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$');}
+ }
+}
+
+

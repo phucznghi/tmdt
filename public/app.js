@@ -760,9 +760,8 @@ import {mountFulfillment} from '/checkout.js';
 
             // Initial Render
             acceptCart(await api('/cart'));
-            if(state.user) state.orders=await api('/orders');
+            if(state.user?.role==='customer') state.orders=await api('/orders');
             updateAccountUI();renderFlashSale();renderCatalog();
             if(new URLSearchParams(location.search).has('checkout')&&state.user) {openCartDrawer();document.getElementById('proceed-checkout-btn').click();}
             } catch(e) { alert('Không tải được cửa hàng: '+e.message); }
         });
-    

@@ -1,3 +1,5 @@
+> Bản online mới dùng Firebase Spark tại https://store-clothes-tmdt.web.app/. Xem [FIREBASE-DEPLOYMENT.md](FIREBASE-DEPLOYMENT.md) cho kiến trúc, phân quyền và vận hành Firebase. Các mô tả Node.js, SQL, cookie, CSRF, healthcheck và backup SQLite bên dưới áp dụng cho bản cục bộ. Các đường dẫn API được bộ điều hợp Firebase ánh xạ sang SDK trong trình duyệt, không phải endpoint HTTP trên Hosting.
+
 # API Mộc Vải
 
 Tất cả dữ liệu gửi là JSON. Gọi `GET /api/me` đầu tiên để nhận cookie phiên và `csrf`. Mọi POST/PUT/PATCH cần header `X-CSRF-Token`; sau đăng nhập/đăng xuất cập nhật token mới từ phản hồi. Lỗi trả dạng `{ "error": "Thông báo" }` cùng mã HTTP 400/401/403/404/409/413/415/429.

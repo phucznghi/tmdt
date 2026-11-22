@@ -92,7 +92,7 @@ export function createApp(options={}) {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
    if(path==='/healthz'&&['GET','HEAD'].includes(method)){try{db.prepare('SELECT 1').get();return send(200,{status:'ok',database:'ok'});}catch{return send(503,{status:'unavailable'});}}
    if(!path.startsWith('/api/')) {
-    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/support.js':'support.js','/support.css':'support.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/text.js':'text.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
+    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/support.js':'support.js','/support.css':'support.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/firebase-client.js':'firebase-client.js','/text.js':'text.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
     const type=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';
     res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-cache'}); return res.end(readFileSync(join(ROOT,'public',file)));
@@ -206,6 +206,7 @@ export function createApp(options={}) {
     const staffOrderAccess=(method==='GET'&&path==='/api/admin/orders')||
      (method==='PATCH'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/status$/.test(path))||
      (['GET','POST'].includes(method)&&path==='/api/admin/products')||
+     (method==='PUT'&&/^\/api\/admin\/products\/\d+$/.test(path))||
      (method==='GET'&&/^\/api\/admin\/orders\/[A-Z0-9]+\/invoice$/.test(path));
     if(user.role!=='admin'&&!(user.role==='staff'&&staffOrderAccess)) requireAdmin();
     if(method==='GET'&&path==='/api/admin/reports')return send(200,buildReport(db,{from:url.searchParams.get('from'),to:url.searchParams.get('to')}));
@@ -290,20 +291,24 @@ export function createApp(options={}) {
    if(!v||typeof v!=='object') fail(400,'Biến thể không hợp lệ.');
    const color=string(v.color,'Màu',1,60),size=string(v.size,'Size',1,20),stock=integer(v.stock,'Tồn kho',0,100000),img=image(v.img),hex=string(v.hex,'Mã màu',7,7);
    if(!/^#[a-f0-9]{6}$/i.test(hex)) fail(400,'Mã màu không hợp lệ.');const key=JSON.stringify([color,size]);if(keys.has(key)) fail(400,'Màu và size bị trùng.');keys.add(key);
-   const cd=colorData.get(color);if(cd&&(cd.hex!==hex||cd.img!==img)) fail(400,'Các size cùng màu phải dùng chung mã màu và ảnh.');colorData.set(color,{hex,img});return {color,size,stock,img,hex};
+   const cd=colorData.get(color);if(cd&&(cd.hex!==hex||cd.img!==img)) fail(400,'Các size cùng màu phải dùng chung mã màu và ảnh.');colorData.set(color,{hex,img});return {id:!id||v.id===undefined?null:integer(v.id,'Mã biến thể',1,Number.MAX_SAFE_INTEGER),color,size,stock,img,hex};
   });
   return tx(()=>{
    const key=normalizeText(name);if(!key)fail(400,'Tên sản phẩm không hợp lệ.');
    const duplicate=all('SELECT id,name,active FROM products WHERE id<>?',id??-1).find(p=>normalizeText(p.name)===key);
    if(duplicate)fail(409,`Sản phẩm “${duplicate.name}” đã tồn tại${duplicate.active?'':' (đang ngừng bán)'}. Hãy chọn sản phẩm đã có để xem tồn hoặc nhập thêm hàng, không tạo tên trùng.`);
+   const staff=one('SELECT role FROM users WHERE id=?',actor)?.role==='staff';
+   const usedIds=new Set();
+   for(const v of variants){const previous=id?(v.id?one('SELECT id,stock FROM variants WHERE product_id=? AND id=?',id,v.id):one('SELECT id,stock FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size)):null;if(v.id&&!previous)fail(400,'Biến thể không thuộc sản phẩm.');if(previous&&usedIds.has(previous.id))fail(400,'Lặp mã biến thể.');if(previous)usedIds.add(previous.id);if(staff&&v.stock!==(previous?.stock||0))fail(403,'Chỉ admin được thay đổi số tồn; biến thể mới phải có tồn 0.');}
    if(id) {const current=products(true).find(p=>p.id===id);if(!current) fail(404,'Không tìm thấy sản phẩm.');if(b.version!==current.version) fail(409,'Sản phẩm hoặc tồn kho đã thay đổi. Hãy tải lại trước khi sửa.');metadata.sold=current.sold;if(current.source)metadata.source=current.source;run('UPDATE products SET name=?,price=?,active=?,metadata=? WHERE id=?',name,price,Number(b.active),JSON.stringify(metadata),id);}
    else id=Number(run('INSERT INTO products(name,price,active,metadata) VALUES(?,?,?,?)',name,price,Number(b.active),JSON.stringify(metadata)).lastInsertRowid);
    run('UPDATE variants SET active=0 WHERE product_id=?',id);
    const stockReference='product-'+id+'-'+randomUUID();
    for(const v of variants){
-    const previous=one('SELECT id,stock FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
-    run('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,?) ON CONFLICT(product_id,color,size) DO UPDATE SET hex=excluded.hex,img=excluded.img,stock=excluded.stock,active=1',id,v.color,v.size,v.hex,v.img,v.stock);
-    const current=one('SELECT id FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
+    const previous=v.id?one('SELECT id,stock FROM variants WHERE product_id=? AND id=?',id,v.id):one('SELECT id,stock FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
+    if(previous)run('UPDATE variants SET color=?,size=?,hex=?,img=?,stock=?,active=1 WHERE id=?',v.color,v.size,v.hex,v.img,v.stock,previous.id);
+    else run('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,?)',id,v.color,v.size,v.hex,v.img,v.stock);
+    const current=previous||one('SELECT id FROM variants WHERE product_id=? AND color=? AND size=?',id,v.color,v.size);
     if(!previous||previous.stock!==v.stock)recordMovement(db,current.id,v.stock-(previous?.stock||0),previous?'adjustment':'initial',stockReference,actor);
    }
    audit(actor,'product.save',id);return id;

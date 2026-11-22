@@ -122,7 +122,7 @@ test('staff can process and ship orders but cannot access admin-only resources o
  await staff.call('/admin/users/'+user.id,'PATCH',{role:'admin'},403);
  await staff.call('/admin/customers/'+user.id,'PATCH',{active:false},403);
  await staff.call('/admin/products','POST',{},400);
- await staff.call('/admin/products/1','PUT',{},403);
+ await staff.call('/admin/products/1','PUT',{},400);
  await staff.call(path+'/payment','PATCH',{status:'paid',reference:'STAFF-COD-001'},403);
  await admin.call(path+'/payment','PATCH',{status:'paid',reference:'ADMIN-COD-001'});
  // A refund-ready order remains protected even when the staff calls the API directly.
@@ -220,11 +220,22 @@ test('pickup follows ready then received, without a carrier; points only accrue 
  await a.call(path,'PATCH',{status:'confirmed'});await a.call(path,'PATCH',{status:'preparing'});await a.call(path,'PATCH',{status:'shipping'},409);await a.call(path,'PATCH',{status:'delivered'},409);const ready=await a.call(path,'PATCH',{status:'ready'});assert.equal(ready.carrier,'');assert.equal((await c.call('/loyalty')).balance,0);const received=await a.call(path,'PATCH',{status:'delivered'});assert.equal(received.statusLabel,'Đã nhận tại cửa hàng');assert.ok(received.earnedPoints>0);assert.equal(received.shipping,0);
 });
 
-test('staff can add products and print bills, but cannot edit products, buy, or read reports',async t=>{
+test('staff can add and edit product information and print bills, but stock and reports remain admin only',async t=>{
  const {client}=await fixture(t);const a=client(),s=client(),c=client(),guest=client();await a.login();const {user}=await s.register('staff-new@example.test');await c.register();await a.call('/admin/users/'+user.id,'PATCH',{role:'staff'});await s.call('/me');await s.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026'});
- const original=(await s.call('/admin/products'))[0];const created=await s.call('/admin/products','POST',{...original,name:'Sản phẩm do nhân viên thêm',variants:[{color:'Xanh',size:'M',hex:'#123456',img:'https://example.com/product.jpg',stock:5}]},201);assert.ok(created.id);await s.call('/admin/products/'+created.id,'PUT',created,403);await c.call('/admin/products','POST',created,403);await s.call('/admin/reports','GET',undefined,403);await c.call('/admin/reports','GET',undefined,403);
+ const original=(await s.call('/admin/products'))[0];const created=await s.call('/admin/products','POST',{...original,name:'Sản phẩm do nhân viên thêm',variants:[{color:'Xanh',size:'M',hex:'#123456',img:'https://example.com/product.jpg',stock:0}]},201);assert.ok(created.id);await s.call('/admin/products/'+created.id,'PUT',{...created,fabric:'Mô tả do nhân viên sửa'});await s.call('/admin/products/'+created.id,'PUT',{...created,variants:created.variants.map(v=>({...v,stock:5}))},403);const stocked=(await a.call('/admin/products')).find(p=>p.id===created.id);await a.call('/admin/products/'+created.id,'PUT',{...stocked,variants:stocked.variants.map(v=>({...v,stock:5}))});await c.call('/admin/products','POST',created,403);await s.call('/admin/reports','GET',undefined,403);await c.call('/admin/reports','GET',undefined,403);
  for(const operator of [a,s]){await operator.call('/cart','PUT',{items:[]},403);await operator.call('/cart/promo','POST',{code:'WELCOME50'},403);await operator.call('/cart/fulfillment','POST',{fulfillment:'pickup'},403);await operator.call('/orders','POST',checkout(),403);}
  await add(c,created.variants[0].id,2);const o=await c.call('/orders','POST',checkout(),201);const bill=await s.call('/admin/orders/'+o.id+'/invoice');assert.equal(bill.order.total,o.total);assert.equal(bill.order.items[0].qty,2);assert.equal(bill.storeAddress,'970 Quang Trung, TP.HCM');await a.call('/admin/orders/'+o.id+'/invoice');await c.call('/admin/orders/'+o.id+'/invoice','GET',undefined,403);await guest.call('/me');await guest.call('/admin/orders/'+o.id+'/invoice','GET',undefined,401);
+});
+
+test('staff rename color and size preserves variant IDs and stock; stock changes and foreign IDs are rejected',async t=>{
+ const {client,app}=await fixture(t);const a=client(),s=client();await a.login();const {user}=await s.register('editor@example.test');await a.call('/admin/users/'+user.id,'PATCH',{role:'staff'});await s.call('/me');await s.call('/auth/login','POST',{email:user.email,password:'Buyer-password-2026',portal:'staff'});
+ const original=(await s.call('/admin/products'))[0],before=original.variants[0];
+ await s.call('/admin/products/'+original.id,'PUT',{...original,name:original.name+' cập nhật',variants:original.variants.filter(v=>v.active).map((v,i)=>i===0?{...v,color:'Màu mới',size:'XXL'}:v)});
+ const current=(await s.call('/admin/products')).find(p=>p.id===original.id),renamed=current.variants.find(v=>v.id===before.id);assert.equal(renamed.color,'Màu mới');assert.equal(renamed.size,'XXL');assert.equal(renamed.stock,before.stock);
+ await s.call('/admin/products/'+current.id,'PUT',{...current,variants:current.variants.filter(v=>v.active).map(v=>({...v,stock:v.stock+1}))},403);
+ await s.call('/admin/products/'+current.id,'PUT',{...current,variants:[...current.variants.filter(v=>v.active),{color:'Mới',size:'M',hex:'#123456',img:'https://example.com/new.jpg',stock:1}]},403);
+ const foreign=(await s.call('/admin/products')).find(p=>p.id!==current.id).variants[0];await s.call('/admin/products/'+current.id,'PUT',{...current,variants:[foreign]},400);
+ assert.equal(app.db.prepare('SELECT stock FROM variants WHERE id=?').get(before.id).stock,before.stock);
 });
 
 test('reports summarize receipts, refunds, growth and local-day boundaries without counting unpaid orders as revenue',async t=>{
@@ -397,7 +408,7 @@ test('product names are unique across accents, case, spaces, staff/admin and hid
   cookie=login.headers.get('set-cookie').split(';')[0];const data=await login.json();return {cookie,'Content-Type':'application/json','X-CSRF-Token':data.csrf};
  }
  const headers=await Promise.all([parallelSession(ADMIN),parallelSession({email:'unique-staff@example.test',password:'Staff-password-2026'})]);
- const results=await Promise.all(headers.map((h,i)=>fetch(base+'/api/admin/products',{method:'POST',headers:h,body:JSON.stringify({...body,name:i?'TEN CUNG LUC':'Tên cùng lúc'})})));
+ const results=await Promise.all(headers.map((h,i)=>fetch(base+'/api/admin/products',{method:'POST',headers:h,body:JSON.stringify({...body,name:i?'TEN CUNG LUC':'Tên cùng lúc',variants:body.variants.map(v=>({...v,stock:0}))})})));
  assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);
  assert.equal(app.db.prepare('SELECT name FROM products').all().filter(v=>normalizeText(v.name)==='ten cung luc').length,1);
 });

@@ -1,3 +1,4 @@
+import {firebaseMode,firebaseApi} from '/firebase-client.js';
 export const $ = id => document.getElementById(id);
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const money = n => new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n);
@@ -6,6 +7,7 @@ export const paymentLabels = {unpaid:'Chưa thanh toán',paid:'Đã thanh toán'
 export const statusLabels = {pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',ready:'Chờ nhận tại cửa hàng',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
 let csrf='';
 export async function api(path,method='GET',body) {
+ if(firebaseMode)return firebaseApi(path,method,body);
  const response=await fetch('/api'+path,{method,headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body!==undefined?{body:JSON.stringify(body)}:{})});
  let data; try {data=await response.json();}catch {throw new Error('Không đọc được phản hồi từ máy chủ.');}
  if(data.csrf) csrf=data.csrf;
