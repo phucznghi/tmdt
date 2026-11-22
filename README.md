@@ -19,7 +19,7 @@ Lệnh đầu yêu cầu bạn tự đặt mật khẩu admin, tối thiểu 8 k
 - Tài khoản, đăng ký, lịch sử đơn: http://localhost:3000/account
 - Quản trị: http://localhost:3000/admin
 
-Đăng nhập admin tại `/account`, sau đó bấm **Quản trị**. Khách tự đăng ký tài khoản mới. Dùng `Ctrl+C` để dừng server.
+Đăng nhập admin/nhân viên tại `/account?admin=1` để vào khu vực quản lý. Khách tự đăng ký tài khoản mới. Dùng `Ctrl+C` để dừng server.
 
 ## Nhân viên và phân quyền
 
@@ -90,7 +90,7 @@ Khi khởi động phiên bản mới, database cũ chỉ có `customer/admin` s
 
 Không mở trực tiếp `index.html` bằng `file://`. Website cần chạy qua server để gọi API. GitHub Pages chỉ phục vụ file tĩnh nên không chạy được backend này.
 
-Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên để bảo toàn bản UI tĩnh hiện tại. Bản nối backend nằm ở `public/index.html` và được phục vụ qua `npm.cmd start`. Các chức năng phần 5–7 cần truy cập địa chỉ server Node.js, không phải bản GitHub Pages tĩnh.
+`index.html` tại thư mục gốc giữ thiết kế trang chủ, bổ sung `site-entry.js` để đồng nhất lối vào đăng nhập. Bản nối backend nằm ở `public/index.html` và được phục vụ qua `npm.cmd start`. Các chức năng phần 5–7 cần truy cập địa chỉ server Node.js, không phải bản GitHub Pages tĩnh.
 
 ## Đối chiếu yêu cầu
 
@@ -102,7 +102,7 @@ Khi đưa vào repo, `index.html` tại thư mục gốc được giữ nguyên 
 
 ## Giữ nguyên UI index
 
-`public/index.html` giữ nguyên phần HTML/CSS của bản gốc trước script ứng dụng. Không sửa header, menu, banner, catalog, giỏ hàng, form đặt hàng hoặc footer. Kiểm thử có SHA-256 của phần UI gốc để phát hiện chỉnh sửa ngoài ý muốn.
+`public/index.html` giữ nguyên phần HTML/CSS của bản gốc trước script ứng dụng. Thiết kế trang chủ, header, menu, banner, catalog, giỏ hàng và footer được giữ; giao diện đăng nhập riêng đã cập nhật theo màu sắc/logo/khung bo tròn của cửa hàng. Kiểm thử có SHA-256 của phần UI gốc để phát hiện chỉnh sửa ngoài ý muốn.
 
 - `public/app.js` giữ các hàm dựng giao diện sản phẩm, bộ lọc, banner và giỏ hàng; thay dữ liệu và nghiệp vụ bằng API.
 - Nút tài khoản dẫn đến `/account` khi chưa đăng nhập; các mục hồ sơ/đơn hàng mở trang tài khoản riêng. Modal đăng nhập Google giả lập trong HTML gốc không còn được kích hoạt.
@@ -178,3 +178,9 @@ Kịch bản demo:
 ### Hai khu vực đăng nhập
 
 `/account` dành cho khách hàng, có đăng ký tài khoản. `/account?admin=1` dành cho nhân viên và quản trị viên, chỉ đăng nhập bằng tài khoản đã được cấp. Chọn sai khu vực sẽ có thông báo chuyển sang khu vực phù hợp; máy chủ xác minh vai trò trước khi tạo phiên đăng nhập. Nhân viên/admin đăng nhập thành công được đưa đến khu vực quản lý.
+
+### Đồng nhất Live Server và đăng nhập thật
+
+Khi mở index gốc bằng Live Server trên localhost/127.0.0.1 (ví dụ cổng 5500), `site-entry.js` tự chuyển sang cùng hostname ở cổng 3000, giữ query/hash. Cần chạy `npm.cmd start` trước; Live Server không thay thế backend. Trang `/account` và `/account?admin=1` dùng chung giao diện logo Mộc Vải, màu kem/xanh/cam, ô nhập và nút bo tròn, với hai lựa chọn Khách hàng và Nhân viên / Quản trị.
+
+Trên GitHub Pages, nút đăng nhập mở hai lựa chọn và thông báo chưa có máy chủ nếu `MOC_VAI_BACKEND_URL` trong `site-entry.js` còn trống; không giả lập đăng nhập Google. Khi đã triển khai backend online, đặt URL HTTPS của web Node.js vào biến này để hai lựa chọn dẫn đến cùng hệ thống thật. Không trỏ người xem GitHub Pages sang localhost của họ.

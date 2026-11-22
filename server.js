@@ -90,7 +90,7 @@ export function createApp(options={}) {
   try {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
    if(!path.startsWith('/api/')) {
-    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
+    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
     const type=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';
     res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-cache'}); return res.end(readFileSync(join(ROOT,'public',file)));

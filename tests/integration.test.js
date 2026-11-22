@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
@@ -309,4 +310,16 @@ test('separate customer and staff login portals enforce existing roles without g
  await guest.call('/auth/login','POST',{...ADMIN,portal:'admin'},400);
  await guest.call('/auth/login','POST',{...ADMIN,password:'Wrong-password-2026',portal:'staff'},401);
  const reg=await guest.call('/auth/register','POST',{email:'portal-buyer@example.test',password:'Buyer-password-2026',name:'Khách mua hàng',portal:'customer',role:'admin'});assert.equal(reg.user.role,'customer');
+});
+
+
+test('static entry forwards local previews to the real app and account theme is served',async t=>{
+ const source=readFileSync(new URL('../site-entry.js',import.meta.url),'utf8');
+ for(const host of ['127.0.0.1','localhost']){
+  let target;runInNewContext(source,{location:{hostname:host,port:'5500',search:'?demo=1',hash:'#top',replace:value=>target=value},document:{addEventListener(){throw new Error('Local preview must redirect before activating mock UI');}}});
+  assert.equal(target,'http://'+host+':3000/?demo=1#top');
+ }
+ let ready=false;runInNewContext(source,{location:{hostname:'phucznghi.github.io',port:'',search:'',hash:'',replace(){throw new Error('Hosted preview must not redirect visitors to localhost');}},document:{addEventListener:event=>{assert.equal(event,'DOMContentLoaded');ready=true;}}});assert.equal(ready,true);
+ assert.match(readFileSync(new URL('../index.html',import.meta.url),'utf8'),/src="\.\/site-entry.js"/);
+ const {base}=await fixture(t);const css=await fetch(base+'/account.css');assert.equal(css.status,200);assert.match(await css.text(),/auth-brand/);
 });
