@@ -291,3 +291,22 @@ test('upgrading an older warehouse records current opening stock without inventi
  const {app,dir}=await fixture(t);const v=app.db.prepare('SELECT id FROM variants LIMIT 1').get();app.db.prepare('UPDATE variants SET stock=7 WHERE id=?').run(v.id);app.db.exec('DROP TABLE stock_movements');
  const reopened=createApp({dbPath:join(dir,'test.sqlite')});try{const row=reopened.db.prepare('SELECT * FROM stock_movements WHERE variant_id=?').get(v.id);assert.equal(row.kind,'opening');assert.equal(row.delta,7);assert.equal(row.stock_after,7);assert.equal(reopened.db.prepare('SELECT COUNT(*) AS n FROM inventory_receipts').get().n,0);assert.equal(reopened.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');}finally{reopened.close();}
 });
+
+
+test('separate customer and staff login portals enforce existing roles without granting privileges',async t=>{
+ const {client,app}=await fixture(t);const c=client(),a=client(),staff=client(),guest=client();
+ await c.register();await c.call('/auth/logout','POST',{});
+ await c.call('/auth/login','POST',{email:'buyer@example.test',password:'Buyer-password-2026',portal:'staff'},403);
+ assert.equal((await c.call('/me')).user,null);
+ const buyer=await c.call('/auth/login','POST',{email:'buyer@example.test',password:'Buyer-password-2026',portal:'customer'});assert.equal(buyer.user.role,'customer');
+ await a.call('/me');await a.call('/auth/login','POST',{...ADMIN,portal:'customer'},403);assert.equal((await a.call('/me')).user,null);
+ assert.equal((await a.call('/auth/login','POST',{...ADMIN,portal:'staff'})).user.role,'admin');
+ app.db.prepare("INSERT INTO users(email,name,password,role) VALUES(?,?,?,'staff')").run('portal-staff@example.test','Staff portal',passwordHash('Staff-password-2026'));
+ await staff.call('/me');await staff.call('/auth/login','POST',{email:'portal-staff@example.test',password:'Staff-password-2026',portal:'staff'});
+ await staff.call('/admin/orders');await staff.call('/admin/users','GET',undefined,403);
+ await guest.call('/me');await guest.call('/auth/register','POST',{email:'forged-staff@example.test',password:'Buyer-password-2026',name:'Forged staff',portal:'staff',role:'admin'},403);
+ assert.equal(app.db.prepare('SELECT id FROM users WHERE email=?').get('forged-staff@example.test'),undefined);
+ await guest.call('/auth/login','POST',{...ADMIN,portal:'admin'},400);
+ await guest.call('/auth/login','POST',{...ADMIN,password:'Wrong-password-2026',portal:'staff'},401);
+ const reg=await guest.call('/auth/register','POST',{email:'portal-buyer@example.test',password:'Buyer-password-2026',name:'Khách mua hàng',portal:'customer',role:'admin'});assert.equal(reg.user.role,'customer');
+});

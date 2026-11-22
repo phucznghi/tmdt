@@ -124,13 +124,17 @@ export function createApp(options={}) {
    if(method==='GET'&&path==='/api/me') return send(200,{user:publicUser(user),csrf:session.csrf,config:{bankDetails:bank,paymentMethods:bank?['cod','bank_transfer']:['cod'],statuses:STATUS,fulfillment:{provinces:PROVINCES,storeProvince:STORE_PROVINCE,storeAddress:storeAddress(),outsideFee:OUTSIDE_FEE}}});
    if(method==='GET'&&path==='/api/products') return send(200,products());
    if(method==='POST'&&['/api/auth/register','/api/auth/login'].includes(path)) {
-    limit(req); const mail=email(b.email);string(b.password,'Mật khẩu',8,128);const pass=b.password;
+    limit(req); if(b.portal!==undefined&&!['customer','staff'].includes(b.portal))fail(400,'Khu vực đăng nhập không hợp lệ.');
+    if(path.endsWith('register')&&b.portal==='staff')fail(403,'Tài khoản nhân viên phải được quản trị viên cấp.');
+    const mail=email(b.email);string(b.password,'Mật khẩu',8,128);const pass=b.password;
     if(path.endsWith('register')) {
      const name=string(b.name,'Họ tên',2,100); if(one('SELECT id FROM users WHERE email=?',mail)) fail(409,'Email đã được đăng ký.');
      run('INSERT INTO users(email,name,password) VALUES(?,?,?)',mail,name,passwordHash(pass));
     }
     const u=one('SELECT * FROM users WHERE email=?',mail);
     if(!u||!passwordValid(pass,u.password)||!u.active) fail(401,'Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.');
+    if(b.portal==='staff'&&u.role==='customer')fail(403,'Đây là tài khoản khách hàng. Hãy chọn đăng nhập Khách hàng.');
+    if(b.portal==='customer'&&u.role!=='customer')fail(403,'Đây là tài khoản nhân viên/quản trị. Hãy chọn đăng nhập Nhân viên / Quản trị.');
     tx(()=>{
      const destination='u:'+u.id;
      for(const item of u.role==='customer'?all('SELECT * FROM carts WHERE owner=?',owner):[]) {

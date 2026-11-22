@@ -174,3 +174,7 @@ Kịch bản demo:
 ## Phạm vi bàn giao
 
 Đây là mã nguồn cho phần 5–7, chưa triển khai backend lên máy chủ. Chưa tích hợp cổng thanh toán, webhook ngân hàng hay API vận chuyển thực. Những phần triển khai, sao lưu/giám sát, kiểm thử tải và mở rộng ở mục 8–12 của đề cần được thực hiện riêng trước khi tuyên bố sẵn sàng vận hành công khai. UI gốc vẫn dùng CDN Tailwind, Google Fonts và ảnh Unsplash nên cần Internet để hiển thị đầy đủ.
+
+### Hai khu vực đăng nhập
+
+`/account` dành cho khách hàng, có đăng ký tài khoản. `/account?admin=1` dành cho nhân viên và quản trị viên, chỉ đăng nhập bằng tài khoản đã được cấp. Chọn sai khu vực sẽ có thông báo chuyển sang khu vực phù hợp; máy chủ xác minh vai trò trước khi tạo phiên đăng nhập. Nhân viên/admin đăng nhập thành công được đưa đến khu vực quản lý.

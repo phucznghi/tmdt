@@ -4,7 +4,7 @@ Ngày cập nhật kiểm tra: 22/11/2026 (Asia/Saigon).
 
 - Nguồn UI: `phucznghi/tmdt`, commit `229d3b47ee97605139ad0b43782914834d49291f`.
 - HTML/CSS trang chủ trước script ứng dụng được giữ nguyên; SHA-256: `510361fef355e6f6246110f72dd1c1d59e195df9429cefdb1d93024955152197`.
-- `npm.cmd test`: **34/34 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
+- `npm.cmd test`: **35/35 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
 - Kiểm tra cú pháp các file JavaScript server/client thành công.
 - Đã thao tác trong trình duyệt trên database thử riêng: thêm vào giỏ từ UI gốc; đăng ký khách; khôi phục giỏ sau đăng ký; đặt COD; xem lịch sử đơn; đăng xuất/đăng nhập admin; xác nhận, chuẩn bị và chuyển đơn sang đang giao với mã vận đơn; sửa tồn kho biến thể; xem danh sách khách hàng.
 - Database dùng cho thao tác trình duyệt nằm trong thư mục làm việc tạm, không đưa vào mã nguồn bàn giao. Lần chạy mới không có tài khoản admin mặc định hay đơn kiểm thử.
@@ -29,3 +29,5 @@ Các kiểm thử mới xác minh: miễn phí TP.HCM/nhận tại cửa hàng v
 Kiểm thử kho xác minh quyền admin, chống tạo/xác nhận phiếu trùng, phiếu nháp/hủy không cộng kho, rollback toàn bộ khi một dòng vượt giới hạn, từ chối số lượng/giá âm hoặc lặp biến thể, tính giá trị theo số nhận và ngày xác nhận tại Việt Nam, theo dõi giữ/hoàn/điều chỉnh kho, giữ lịch sử sau khởi động lại và ghi tồn đầu cho dữ liệu cũ mà không bịa phiếu nhập.
 
 Đã thao tác nhập kho trên trình duyệt bằng dữ liệu giả: lập phiếu hai biến thể (10 × 120.000đ và 4 × 90.000đ), lưu nháp không đổi tồn; xác nhận tăng đúng 14 sản phẩm và 1.560.000đ trong báo cáo. Tải lại vẫn chỉ có một phiếu, tổng không bị cộng trùng. Kiểm tra bố cục bảng tồn và biểu mẫu nhập hàng.
+
+Kiểm tra hai khu vực đăng nhập: customer/staff phải khớp vai trò có sẵn, đăng ký nội bộ bị từ chối và không thể tự cấp quyền qua payload. Trên trình duyệt, khu vực nội bộ không có đăng ký, nhân viên đăng nhập được chuyển đến /admin; dùng tài khoản nhân viên ở khu vực khách nhận thông báo chọn lại; khu vực khách vẫn có đăng ký.

@@ -41,7 +41,7 @@ function render(){
 }
 function setTab(next){if(!isAdmin&&!['orders','products'].includes(next))return;tab=next;records=[];$('search').value='';$('search').placeholder=next==='inventory'?'Tìm sản phẩm, màu, size, nhà cung cấp…':next==='products'?'Tìm tên sản phẩm, danh mục…':next==='orders'?'Tìm mã đơn, tên, email…':'Tìm tên, email…';$('search').parentElement.classList.toggle('hidden',tab==='reports');$('title').textContent=titles[tab][0];$('subtitle').textContent=titles[tab][1];document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$('new-product').classList.toggle('hidden',tab!=='products');$('status-filter').innerHTML='<option value="">Tất cả trạng thái</option>'+(tab==='inventory'?'<option value="low">Sắp hết (đang bán ≤ 5)</option><option value="out">Hết hàng</option>':tab==='orders'?Object.entries(statusLabels).map(([s,l])=>`<option value="${s}">${l}</option>`).join(''):'<option value="1">Đang hoạt động / đang bán</option><option value="0">Đã khóa / đã ẩn</option>');$('content').textContent='Đang tải…';load().catch(error);}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('search').oninput=render;$('status-filter').onchange=render;$('refresh').onclick=()=>busy($('refresh'),load,error);
-$('logout').onclick=()=>busy($('logout'),async()=>{await api('/auth/logout','POST',{});location.href='/account';},error);
+$('logout').onclick=()=>busy($('logout'),async()=>{await api('/auth/logout','POST',{});location.href='/account?admin=1';},error);
 $('content').addEventListener('submit',e=>{
  e.preventDefault();const f=e.target;
  if(f.id==='report-filter'){reportRange=Object.fromEntries(new FormData(f));busy(f.querySelector('button'),load,error);return;}

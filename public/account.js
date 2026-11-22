@@ -2,11 +2,15 @@ import {$,api,esc,money,date,orderHtml,busy,redirectForLogin} from '/shared.js';
 import {mountFulfillment} from '/checkout.js';
 let me,mode='login',timer,cartQuote,fulfillmentUI;
 const params=new URLSearchParams(location.search);
+const portal=params.has('admin')?'staff':'customer';
+$('customer-login').setAttribute('aria-current',portal==='customer'?'page':'false');$('staff-login').setAttribute('aria-current',portal==='staff'?'page':'false');
+$('register-tab').classList.toggle('hidden',portal==='staff');$('auth-actions').classList.toggle('hidden',portal==='staff');
+$('auth-description').textContent=portal==='staff'?'Dành cho nhân viên và quản trị viên được cửa hàng cấp tài khoản.':'Mua sắm, theo dõi đơn hàng và tích điểm.';
 function toast(message,error=false){$('toast').textContent=message;$('toast').className=error?'error':'';clearTimeout(timer);timer=setTimeout(()=>$('toast').className='hidden',6000);}
 const error=e=>toast(e.message,true);
-function authMode(next){mode=next;const reg=mode==='register';$('auth-title').textContent=reg?'Tạo tài khoản':'Đăng nhập';$('auth-submit').textContent=reg?'Đăng ký':'Đăng nhập';$('name-field').classList.toggle('hidden',!reg);$('auth-form').elements.name.required=reg;$('auth-form').elements.password.autocomplete=reg?'new-password':'current-password';$('login-tab').className=reg?'secondary':'';$('register-tab').className=reg?'':'secondary';$('auth-error').textContent='';}
+function authMode(next){mode=next;const reg=mode==='register'&&portal==='customer';if(!reg)mode='login';$('auth-title').textContent=reg?'Tạo tài khoản khách hàng':portal==='staff'?'Đăng nhập nội bộ':'Đăng nhập khách hàng';$('auth-submit').textContent=reg?'Đăng ký':'Đăng nhập';$('name-field').classList.toggle('hidden',!reg);$('auth-form').elements.name.required=reg;$('auth-form').elements.password.autocomplete=reg?'new-password':'current-password';$('login-tab').className=reg?'secondary':'';$('register-tab').classList.toggle('secondary',!reg);$('auth-error').textContent='';}
 $('login-tab').onclick=()=>authMode('login');$('register-tab').onclick=()=>authMode('register');
-$('auth-form').onsubmit=e=>{e.preventDefault();busy($('auth-submit'),async()=>{await api('/auth/'+mode,'POST',Object.fromEntries(new FormData(e.target)));if(params.has('admin'))location.href='/admin';else if(params.has('checkout'))location.href='/?checkout=1';else location.reload();},e=>$('auth-error').textContent=e.message);};
+$('auth-form').onsubmit=e=>{e.preventDefault();busy($('auth-submit'),async()=>{const result=await api('/auth/'+mode,'POST',{...Object.fromEntries(new FormData(e.target)),portal});if(['admin','staff'].includes(result.user.role))location.href='/admin';else if(params.has('checkout'))location.href='/?checkout=1';else location.reload();},e=>$('auth-error').textContent=e.message);};
 $('logout').onclick=()=>busy($('logout'),async()=>{await api('/auth/logout','POST',{});location.href='/account';},error);
 async function selectTab(tab){if(me.user.role!=='customer')tab='profile';document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('secondary',b.dataset.tab!==tab));for(const t of ['orders','profile','checkout'])$(t+'-section').classList.toggle('hidden',t!==tab);if(me.user.role!=='customer')return;if(tab==='orders')await loadOrders();else await loadLoyalty();if(tab==='checkout')await loadCart();}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab).catch(error));
