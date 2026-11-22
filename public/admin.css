@@ -7,3 +7,5 @@
 .form-grid>.panel{min-width:0}
 
 .auth-audience a{flex:1;text-align:center;text-decoration:none;border:1px solid var(--border);border-radius:9px;padding:.7rem;font-size:.875rem;font-weight:600}.auth-audience a[aria-current=page]{background:var(--forest);color:white;border-color:var(--forest)}
+
+.name-conflict{color:#a32e21;font-weight:600}.receipt-stock{grid-column:1/-1;background:#edf3eb;border-radius:8px;padding:.7rem;font-size:.875rem}.receipt-line>div{min-width:0}.receipt-line>div label+label{margin-top:.6rem}

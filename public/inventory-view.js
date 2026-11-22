@@ -1,9 +1,10 @@
+import {matchesSearch} from '/text.js';
 import {esc,money,date} from '/shared.js';
 export const receiptLabels={draft:'Phiếu nháp',received:'Đã nhập kho',cancelled:'Đã hủy'};
 const movementLabels={opening:'Tồn đầu khi bật tính năng',initial:'Tồn ban đầu sản phẩm',receipt:'Nhập hàng',order_reserve:'Giữ hàng cho đơn',order_cancel:'Hoàn kho do hủy đơn',adjustment:'Điều chỉnh tồn'};
 export function inventoryHtml(data,{query='',filter='',openReceipt=''}={}){
- const q=query.trim().toLocaleLowerCase('vi'),matches=value=>JSON.stringify(value).toLocaleLowerCase('vi').includes(q);
- const stock=data.stock.filter(v=>matches([v.name,v.color,v.size,String(v.id)])).filter(v=>filter==='low'?v.stock<=5&&v.active&&v.product_active:filter==='out'?v.stock===0:true);
+ const matches=value=>matchesSearch(value,query);
+ const stock=data.stock.filter(v=>matches([v.name,v.category,v.audience,v.color,v.size,String(v.id)])).filter(v=>filter==='low'?v.stock<=5&&v.active&&v.product_active:filter==='out'?v.stock===0:true);
  const receipts=data.receipts.filter(r=>r.id===openReceipt||matches([r.id,r.supplier,r.supplier_reference,...r.items.map(i=>[i.name,i.color,i.size])]));
  const movements=data.movements.filter(m=>matches([m.name,m.color,m.size,m.reference]));
  return `<form id="inventory-filter" class="panel report-filter"><label>Từ ngày<input name="from" type="date" value="${data.from}" required></label><label>Đến ngày<input name="to" type="date" value="${data.to}" required></label><button>Xem báo cáo nhập kho</button><button type="button" id="new-receipt" class="secondary">Lập phiếu nhập hàng</button></form>

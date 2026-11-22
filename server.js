@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {normalizeText} from './public/text.js';
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, scryptSync, timingSafeEqual, createHash, randomUUID } from 'node:crypto';
 import { readFileSync, mkdirSync } from 'node:fs';
@@ -90,7 +91,7 @@ export function createApp(options={}) {
   try {
    const url=new URL(req.url,'http://localhost'); const path=url.pathname, method=req.method;
    if(!path.startsWith('/api/')) {
-    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/support.js':'support.js','/support.css':'support.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
+    const staticFiles={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/admin':'admin.html','/admin/':'admin.html','/account':'account.html','/account.js':'account.js','/account.css':'account.css','/support.js':'support.js','/support.css':'support.css','/admin.js':'admin.js','/admin.css':'admin.css','/shared.js':'shared.js','/text.js':'text.js','/checkout.js':'checkout.js','/reports-view.js':'reports-view.js','/inventory-view.js':'inventory-view.js','/invoice':'invoice.html','/invoice.js':'invoice.js','/invoice.css':'invoice.css'};
     const file=staticFiles[path]; if(!file) fail(404,'Không tìm thấy trang.');
     const type=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';
     res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-cache'}); return res.end(readFileSync(join(ROOT,'public',file)));
@@ -291,6 +292,9 @@ export function createApp(options={}) {
    const cd=colorData.get(color);if(cd&&(cd.hex!==hex||cd.img!==img)) fail(400,'Các size cùng màu phải dùng chung mã màu và ảnh.');colorData.set(color,{hex,img});return {color,size,stock,img,hex};
   });
   return tx(()=>{
+   const key=normalizeText(name);if(!key)fail(400,'Tên sản phẩm không hợp lệ.');
+   const duplicate=all('SELECT id,name,active FROM products WHERE id<>?',id??-1).find(p=>normalizeText(p.name)===key);
+   if(duplicate)fail(409,`Sản phẩm “${duplicate.name}” đã tồn tại${duplicate.active?'':' (đang ngừng bán)'}. Hãy chọn sản phẩm đã có để xem tồn hoặc nhập thêm hàng, không tạo tên trùng.`);
    if(id) {const current=products(true).find(p=>p.id===id);if(!current) fail(404,'Không tìm thấy sản phẩm.');if(b.version!==current.version) fail(409,'Sản phẩm hoặc tồn kho đã thay đổi. Hãy tải lại trước khi sửa.');metadata.sold=current.sold;if(current.source)metadata.source=current.source;run('UPDATE products SET name=?,price=?,active=?,metadata=? WHERE id=?',name,price,Number(b.active),JSON.stringify(metadata),id);}
    else id=Number(run('INSERT INTO products(name,price,active,metadata) VALUES(?,?,?,?)',name,price,Number(b.active),JSON.stringify(metadata)).lastInsertRowid);
    run('UPDATE variants SET active=0 WHERE product_id=?',id);

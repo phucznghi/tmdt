@@ -1,3 +1,4 @@
+import {normalizeText,matchesSearch} from '/text.js';
 import {$,api,esc,money,date,statusLabels,orderHtml,busy} from '/shared.js';
 import {reportsHtml} from '/reports-view.js';
 import {inventoryHtml} from '/inventory-view.js';
@@ -21,8 +22,8 @@ function render(){
   $('stats').innerHTML=stat('Doanh thu tổng hợp (sau hoàn)',money(records.totals.netRevenue))+stat('Doanh thu kỳ đã chọn',money(records.current.netRevenue))+stat('Đơn kỳ đã chọn',records.current.orderCount)+stat('Khách hàng mới',records.current.newCustomers);
   $('content').innerHTML=reportsHtml(records);return;
  }
- const q=$('search').value.toLocaleLowerCase('vi'),filter=$('status-filter').value;
- const data=records.filter(r=>JSON.stringify(tab==='orders'?[r.id,r.receiver,r.customer_email,r.tracking]:[r.name,r.email,r.category,roles[r.role]]).toLocaleLowerCase('vi').includes(q)).filter(r=>!filter||(tab==='orders'?r.status===filter:String(Number(r.active))===filter));
+ const q=$('search').value,filter=$('status-filter').value;
+ const data=records.filter(r=>matchesSearch(tab==='orders'?[r.id,r.receiver,r.customer_email,r.tracking]:[r.name,r.email,r.category,roles[r.role],...(r.variants||[]).map(v=>[v.color,v.size])],q)).filter(r=>!filter||(tab==='orders'?r.status===filter:String(Number(r.active))===filter));
  if(tab==='orders'){
   $('stats').innerHTML=stat('Tổng đơn hàng',records.length)+stat('Chờ xác nhận',records.filter(r=>r.status==='pending').length)+stat('Đang giao',records.filter(r=>r.status==='shipping').length)+(isAdmin?stat('Đã thu tiền (sau hoàn)',money(records.filter(r=>['paid','refund_pending'].includes(r.payment_status)).reduce((s,o)=>s+o.total,0))):stat('Đã giao',records.filter(r=>r.status==='delivered').length));
   $('content').innerHTML=data.map(o=>`<article class="order" data-order="${o.id}">${orderHtml(o,true)}<p><a class="bill-link" href="/invoice?id=${o.id}" target="_blank" rel="noopener">In bill / Xem tổng giá trị đơn</a></p>
@@ -69,18 +70,40 @@ $('content').addEventListener('click',e=>{
 function addVariant(v={}){
  const row=document.createElement('div');row.className='variant-row';row.innerHTML=`<label>Màu<input data-field="color" value="${esc(v.color||'Xanh Rừng')}" required maxlength="60"></label><label>Size<input data-field="size" value="${esc(v.size||'M')}" required maxlength="20"></label><label>Mã màu<input data-field="hex" type="color" value="${esc(v.hex||'#1b4332')}"></label><label>Ảnh HTTPS<input data-field="img" type="url" value="${esc(v.img||'')}" required></label><label>Tồn kho<input data-field="stock" type="number" min="0" max="100000" value="${v.stock??0}" required></label><button type="button" class="danger" aria-label="Xóa biến thể">×</button>`;row.querySelector('button').onclick=()=>row.remove();$('variants').append(row);
 }
-function openEditor(p=null){if(p&&!isAdmin)return;editing=p;$('editor-title').textContent=p?'Chỉnh sửa sản phẩm':'Thêm sản phẩm';const f=$('product-form');f.reset();for(const name of ['name','category','audience','badge','price','originalPrice','fabric'])if(p)f.elements[name].value=p[name];f.elements.active.checked=p?p.active:true;f.elements.flashSale.checked=!!p?.flashSale;$('variants').innerHTML='';if(p)p.variants.filter(v=>v.active).forEach(addVariant);else addVariant();$('product-dialog').showModal();}
+function openEditor(p=null){if(p&&!isAdmin)return;editing=p;$('editor-title').textContent=p?'Chỉnh sửa sản phẩm':'Thêm sản phẩm';const f=$('product-form');f.reset();for(const name of ['name','category','audience','badge','price','originalPrice','fabric'])if(p)f.elements[name].value=p[name];f.elements.active.checked=p?p.active:true;f.elements.flashSale.checked=!!p?.flashSale;$('variants').innerHTML='';if(p)p.variants.filter(v=>v.active).forEach(addVariant);else addVariant();validateProductName();$('product-dialog').showModal();}
 $('new-product').onclick=()=>openEditor();$('close-editor').onclick=()=>$('product-dialog').close();$('add-variant').onclick=()=>addVariant();
 $('product-form').onsubmit=e=>{e.preventDefault();const f=e.target;busy(f.querySelector('[type=submit]'),async()=>{
+ if(!validateProductName()){f.elements.name.reportValidity();return;}
  const b=Object.fromEntries(new FormData(f));for(const n of ['price','originalPrice'])b[n]=Number(b[n]);b.active=f.elements.active.checked;b.flashSale=f.elements.flashSale.checked;b.version=editing?.version;
  b.variants=[...$('variants').children].map(row=>Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.dataset.field==='stock'?Number(i.value):i.value])));
  await api('/admin/products'+(editing?'/'+editing.id:''),editing?'PUT':'POST',b);$('product-dialog').close();await load();toast('Đã lưu sản phẩm.');
  },error);};
-function receiptTotal(){let total=0;for(const row of $('receipt-lines').children)total+=(Number(row.querySelector('[data-qty]').value)||0)*(Number(row.querySelector('[data-cost]').value)||0);$('receipt-total').textContent='Tổng giá trị nhập: '+money(total);}
+function validateProductName(){
+ const input=$('product-form').elements.name,key=normalizeText(input.value);
+ const duplicate=Array.isArray(records)&&key?records.find(p=>p.id!==editing?.id&&normalizeText(p.name)===key):null;
+ input.setCustomValidity(duplicate?'Tên sản phẩm đã tồn tại. Hãy chọn sản phẩm đã có để xem tồn hoặc nhập thêm hàng.':'');
+ $('product-name-feedback').textContent=duplicate?`Đã có: ${duplicate.name} · Tồn khả dụng ${duplicate.variants.filter(v=>v.active).reduce((n,v)=>n+v.stock,0)}${duplicate.active?'':' · Đang ngừng bán'}. Không tạo sản phẩm trùng tên.`:'';
+ $('product-existing-stock').classList.toggle('hidden',!duplicate);$('product-existing-stock').dataset.name=duplicate?.name||'';
+ return !duplicate;
+}
+$('product-form').elements.name.addEventListener('input',validateProductName);
+$('product-existing-stock').onclick=()=>{$('product-dialog').close();$('search').value=$('product-existing-stock').dataset.name;$('status-filter').value='';render();};
+function receiptTotal(){let total=0;for(const row of $('receipt-lines').children){total+=(Number(row.querySelector('[data-qty]').value)||0)*(Number(row.querySelector('[data-cost]').value)||0);showReceiptStock(row);}$('receipt-total').textContent='Tổng giá trị nhập: '+money(total);}
+function showReceiptStock(row){
+ const selected=records.stock.find(v=>v.id===Number(row.querySelector('[data-variant]').value));
+ const hint=row.querySelector('[data-stock-hint]');
+ hint.textContent=selected?`Tồn khả dụng: ${selected.stock} · Đang giữ cho đơn: ${selected.reserved} · Ước tính tại kho: ${selected.onHand} · Khả dụng dự kiến sau nhập: ${selected.stock+(Number(row.querySelector('[data-qty]').value)||0)}${selected.active&&selected.product_active?'':' · Sản phẩm/biến thể đang ngừng bán'}`:'Chọn sản phẩm đã có để xem tồn theo màu/size. Phiếu nháp chưa cộng kho.';
+}
+function receiptOptions(row){
+ const select=row.querySelector('[data-variant]'),current=select.value,query=row.querySelector('[data-variant-search]').value;
+ const choices=records.stock.filter(v=>matchesSearch([v.id,v.name,v.category,v.audience,v.color,v.size],query));
+ select.innerHTML=`<option value="">${choices.length?'Chọn biến thể':'Không tìm thấy sản phẩm phù hợp'}</option>`+choices.map(v=>`<option value="${v.id}">#${v.id} ${esc(v.name)} · ${esc(v.color)} / ${esc(v.size)} (tồn ${v.stock}${v.active&&v.product_active?'':', ngừng bán'})</option>`).join('');
+ select.value=choices.some(v=>String(v.id)===current)?current:'';showReceiptStock(row);
+}
 function addReceiptLine(){
  const row=document.createElement('div');row.className='receipt-line';
- row.innerHTML=`<label>Sản phẩm / màu / size<select data-variant required><option value="">Chọn biến thể</option>${records.stock.map(v=>`<option value="${v.id}">#${v.id} ${esc(v.name)} · ${esc(v.color)} / ${esc(v.size)} (tồn ${v.stock}${v.active&&v.product_active?'':', ngừng bán'})</option>`).join('')}</select></label><label>Số lượng<input data-qty type="number" min="1" max="100000" step="1" value="1" required></label><label>Giá nhập / sản phẩm (đ)<input data-cost type="number" min="0" max="100000000" step="1" required></label><button class="danger" type="button" aria-label="Xóa dòng hàng">Xóa</button>`;
- row.querySelector('button').onclick=()=>{row.remove();receiptTotal();};row.addEventListener('input',receiptTotal);$('receipt-lines').append(row);receiptTotal();
+ row.innerHTML=`<div><label>Tìm sản phẩm có sẵn (không dấu)<input data-variant-search type="search" placeholder="VD: ao khoac, xanh navy…"></label><label>Sản phẩm / màu / size<select data-variant required aria-label="Chọn sản phẩm nhập kho"></select></label></div><label>Số lượng<input data-qty type="number" min="1" max="100000" step="1" value="1" required></label><label>Giá nhập / sản phẩm (đ)<input data-cost type="number" min="0" max="100000000" step="1" required></label><button class="danger" type="button" aria-label="Xóa dòng hàng">Xóa</button><p class="receipt-stock" data-stock-hint role="status"></p>`;
+ row.querySelector('button').onclick=()=>{row.remove();receiptTotal();};row.querySelector('[data-variant-search]').addEventListener('input',()=>receiptOptions(row));row.querySelector('[data-variant]').addEventListener('change',()=>showReceiptStock(row));row.addEventListener('input',receiptTotal);$('receipt-lines').append(row);receiptOptions(row);receiptTotal();
 }
 function openReceiptEditor(){if(!isAdmin||tab!=='inventory'||!records.stock)return;receiptRequestKey=crypto.randomUUID();$('receipt-form').reset();$('receipt-lines').innerHTML='';addReceiptLine();$('receipt-dialog').showModal();}
 $('close-receipt').onclick=()=>$('receipt-dialog').close();$('add-receipt-line').onclick=addReceiptLine;

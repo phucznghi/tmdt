@@ -1,3 +1,4 @@
+import {matchesSearch} from '/text.js';
 import {api,esc,busy,redirectForLogin} from '/shared.js';
 import {mountFulfillment} from '/checkout.js';
 
@@ -304,12 +305,7 @@ import {mountFulfillment} from '/checkout.js';
                     if (state.specialTag === 'new') matchSpecial = p.badge === 'Mới về';
                     if (state.specialTag === 'connect') matchSpecial = p.category === 'Áo Polo' || p.badge === 'BST Gia Đình';
 
-                    const q = state.search.trim().toLowerCase();
-                    const matchSearch = !q ||
-                        p.name.toLowerCase().includes(q) ||
-                        p.category.toLowerCase().includes(q) ||
-                        p.audience.toLowerCase().includes(q) ||
-                        p.fabric.toLowerCase().includes(q);
+                    const matchSearch = matchesSearch([p.name,p.category,p.audience,p.fabric,...p.colors.map(c=>c.name),...p.sizes],state.search);
 
                     return matchAudience && matchCategory && matchSpecial && matchSearch;
                 });

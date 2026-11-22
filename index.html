@@ -65,6 +65,7 @@
     <script src="./site-entry.js" defer></script>
 <link rel="stylesheet" href="./public/support.css">
 <script src="./public/support.js" data-runtime="static" defer></script>
+<script type="module">import {matchesSearch} from "./public/text.js"; window.matchesSearch=matchesSearch;</script>
 </head>
 <body class="antialiased selection:bg-forest selection:text-white">
 
@@ -1469,12 +1470,7 @@
                     if (state.specialTag === 'new') matchSpecial = p.badge === 'Mới về';
                     if (state.specialTag === 'connect') matchSpecial = p.category === 'Áo Polo' || p.badge === 'BST Gia Đình';
 
-                    const q = state.search.trim().toLowerCase();
-                    const matchSearch = !q ||
-                        p.name.toLowerCase().includes(q) ||
-                        p.category.toLowerCase().includes(q) ||
-                        p.audience.toLowerCase().includes(q) ||
-                        p.fabric.toLowerCase().includes(q);
+                    const matchSearch = matchesSearch([p.name,p.category,p.audience,p.fabric,...p.colors.map(c=>c.name),...p.sizes],state.search);
 
                     return matchAudience && matchCategory && matchSpecial && matchSearch;
                 });

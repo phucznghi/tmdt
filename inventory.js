@@ -48,7 +48,7 @@ export function inventoryService(db){
  function cancel(id,actor){return tx(()=>{const r=receipt(id);if(r.status==='cancelled')return r;if(r.status!=='draft')fail(409,'Phiếu đã nhập không thể hủy. Điều chỉnh tồn kho cần được ghi nhận riêng.');run("UPDATE inventory_receipts SET status='cancelled',cancelled_at=? WHERE id=?",now(),id);audit(actor,'inventory.cancel',id);return receipt(id);});}
  function report(query={}){
   const {from,to,days}=reportWindow(query),inRange=value=>value&&localDay(value)>=from&&localDay(value)<=to;
-  const stock=all(`SELECT v.id,v.product_id,p.name,v.color,v.size,v.stock,v.active,p.active AS product_active,
+  const stock=all(`SELECT v.id,v.product_id,p.name,json_extract(p.metadata,'$.category') AS category,json_extract(p.metadata,'$.audience') AS audience,v.color,v.size,v.stock,v.active,p.active AS product_active,
    COALESCE((SELECT SUM(i.qty) FROM order_items i JOIN orders o ON o.id=i.order_id WHERE i.variant_id=v.id AND o.status IN ('pending','confirmed','preparing','ready')),0) AS reserved
    FROM variants v JOIN products p ON p.id=v.product_id ORDER BY p.name,v.id`).map(v=>({...v,onHand:v.stock+v.reserved}));
   const receipts=all('SELECT id FROM inventory_receipts ORDER BY created_at DESC,id').map(r=>receipt(r.id));

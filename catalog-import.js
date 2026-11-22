@@ -1,4 +1,5 @@
 import {readFileSync} from 'node:fs';
+import {normalizeText} from './public/text.js';
 import {recordMovement} from './inventory.js';
 export function importUniqloCatalog(db){
  const products=JSON.parse(readFileSync(new URL('./seed.json',import.meta.url),'utf8'));
@@ -11,6 +12,7 @@ export function importUniqloCatalog(db){
   for(const p of products){
    if(db.prepare("SELECT id FROM products WHERE json_extract(metadata,'$.source.productCode')=?").get(p.source.productCode))continue;
    const {id,name,price,colors,sizes,...metadata}=p;
+   if(db.prepare('SELECT name FROM products').all().some(row=>normalizeText(row.name)===normalizeText(name)))throw new Error('Đã có sản phẩm cùng tên: '+name+'. Hãy kiểm tra sản phẩm hiện có trước khi nhập danh mục.');
    const productId=Number(db.prepare('INSERT INTO products(name,price,metadata) VALUES(?,?,?)').run(name,price,JSON.stringify(metadata)).lastInsertRowid);
    for(const c of colors)for(const size of sizes){const variantId=Number(db.prepare('INSERT INTO variants(product_id,color,size,hex,img,stock) VALUES(?,?,?,?,?,20)').run(productId,c.name,size,c.hex,c.img).lastInsertRowid);recordMovement(db,variantId,20,'initial','uniqlo-demo-'+p.source.productCode,actor??null);}
    added++;

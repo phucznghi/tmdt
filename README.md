@@ -196,3 +196,11 @@ Bảng size là tham khảo chung. Nội dung đổi trả/bảo hành hướng 
 Danh mục mới gồm 12 mẫu nam/nữ/trẻ em từ UNIQLO Việt Nam; xem `CATALOG-SOURCES.md` cho nguồn và giá kiểm tra. Ảnh/menu/banner và nội dung xem nhanh đã cập nhật. Giá ghi là tham khảo; không hiển thị đánh giá/lượt bán giả hoặc đồng hồ Flash Sale. Bản tĩnh dùng cùng dữ liệu với seed backend.
 
 Database mới dùng danh mục mới ngay. Database đã có dữ liệu: sao lưu trước, sau đó chạy `npm.cmd run catalog:uniqlo` trong cùng cấu hình DB_PATH của server. Lệnh chỉ ẩn đúng sản phẩm mẫu cũ chưa đổi tên, thêm mẫu nguồn chưa có và giữ nguyên sản phẩm tự thêm, tài khoản, biến thể/tồn cũ, đơn hàng và ảnh chụp trong đơn. Không đổi sản phẩm cũ thành mẫu khác. Chạy lại không nhân bản sản phẩm hoặc đặt lại tồn. Các biến thể mới có 20 đơn vị demo và bản ghi tồn ban đầu; đây không phải lượng hàng thực nhập từ UNIQLO. Nếu đã sửa tên sản phẩm mẫu cũ, cần admin chủ động ngừng bán thay vì script ẩn nhầm dữ liệu tự sửa.
+
+### Tìm kiếm không dấu và tránh trùng sản phẩm
+
+Tìm kiếm ở cửa hàng, quản trị, kho/phiếu nhập dùng chung chuẩn hóa Unicode, bỏ dấu tiếng Việt (gồm đ/Đ), không phân biệt hoa thường, gom khoảng trắng. Nhiều từ có thể nằm ở tên, danh mục, đối tượng, màu, size và không bắt buộc đúng thứ tự. Ví dụ `ao khoac navy`, `ao do`, `nha cung cap`.
+
+Tạo/sửa sản phẩm bị từ chối HTTP 409 nếu tên sau chuẩn hóa trùng một sản phẩm khác, kể cả sản phẩm ngừng bán hoặc còn hàng trong kho. Kiểm tra nằm trong transaction của server; hai yêu cầu đồng thời không tạo được hai tên trùng. Form báo ngay sản phẩm có sẵn và tổng tồn khả dụng, cho mở danh sách để xem. Tên không được tái sử dụng để tạo mã hàng thứ hai chỉ bằng đổi dấu/hoa thường/khoảng trắng. Khi sửa chính sản phẩm đó có thể giữ tên hoặc đổi cách viết.
+
+Nhập thêm hàng: mở Kho & nhập hàng, lập phiếu và tìm/chọn biến thể hiện có bằng tên không dấu. Mỗi dòng hiển thị tồn khả dụng, đang giữ cho đơn, ước tính tại kho và khả dụng dự kiến sau số lượng nhập. Đây là số tại thời điểm tải dữ liệu; kho thật chỉ được cập nhật một lần khi xác nhận nhận hàng. Phiếu nhập không tạo sản phẩm mới. Nhân viên chỉ xem tồn tại danh sách sản phẩm; nhập kho vẫn thuộc admin.

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
+import {normalizeText,matchesSearch} from '../public/text.js';
 import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -358,4 +358,46 @@ test('Uniqlo catalog import archives only original samples and preserves old sto
   assert.deepEqual(importUniqloCatalog(db),{added:0,archived:0});assert.equal(db.prepare('SELECT stock FROM variants WHERE id=?').get(first.id).stock,19);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM stock_movements').get().n,before);
   assert.equal(db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);
  }finally{db.close();}
+});
+
+
+test('Vietnamese search ignores accents, case, spacing and word order',()=>{
+ assert.equal(normalizeText('  ÁO  ĐỎ  Đậm  '),'ao do dam');
+ assert.equal(normalizeText('A\u0301o Đo\u0309'),'ao do');
+ assert.equal(matchesSearch(['Áo Khoác','Xanh Navy','Nam'],'  NAVY ao  khoac '),true);
+ assert.equal(matchesSearch(['Áo Thun','Đỏ đậm'],'ao do'),true);
+ assert.equal(matchesSearch(['Áo Khoác','Xanh Navy'],'ao xanh do'),false);
+ assert.equal(matchesSearch(['Nhà cung cấp Vải Xanh'],'nha cung cap'),true);
+ assert.equal(matchesSearch(['Áo Thun'],'  '),true);
+});
+
+test('product names are unique across accents, case, spaces, staff/admin and hidden warehouse records',async t=>{
+ const {client,app,base}=await fixture(t);const a=client(),staff=client();await a.login();
+ app.db.prepare("INSERT INTO users(email,name,password,role) VALUES(?,?,?,'staff')").run('unique-staff@example.test','Nhân viên kiểm thử',passwordHash('Staff-password-2026'));
+ await staff.call('/me');await staff.call('/auth/login','POST',{email:'unique-staff@example.test',password:'Staff-password-2026',portal:'staff'});
+ const p=(await a.call('/admin/products'))[0],body={...p,variants:p.variants.filter(v=>v.active)};
+ const before=app.db.prepare('SELECT COUNT(*) AS n FROM products').get().n;
+ for(const c of [a,staff])for(const name of [p.name,normalizeText(p.name).toUpperCase(),normalizeText(p.name).replaceAll(' ','  '),p.name.normalize('NFD')])await c.call('/admin/products','POST',{...body,name},409);
+ assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM products').get().n,before);
+ // A product remains the same inventory item even after it is hidden from sale.
+ await a.call('/admin/products/'+p.id,'PUT',{...body,active:false});
+ await staff.call('/admin/products','POST',{...body,name:normalizeText(p.name)},409);
+ const another=(await a.call('/admin/products')).find(v=>v.id!==p.id);
+ await a.call('/admin/products/'+another.id,'PUT',{...another,name:normalizeText(p.name)},409);
+ assert.equal(app.db.prepare('SELECT name FROM products WHERE id=?').get(another.id).name,another.name);
+ const current=(await a.call('/admin/products')).find(v=>v.id===p.id);
+ await a.call('/admin/products/'+p.id,'PUT',{...current,name:p.name.toUpperCase()});
+ assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM products').get().n,before);
+ const unique=await staff.call('/admin/products','POST',{...body,name:'Sản phẩm hoàn toàn mới',variants:[{...body.variants[0],stock:0}]},201);
+ assert.equal(unique.name,'Sản phẩm hoàn toàn mới');assert.equal(unique.variants[0].stock,0);
+ // Both requests pass through one transaction; only the first insert can succeed.
+ async function parallelSession(credentials){
+  const initial=await fetch(base+'/api/me');let cookie=initial.headers.get('set-cookie').split(';')[0];const initialData=await initial.json();
+  const login=await fetch(base+'/api/auth/login',{method:'POST',headers:{cookie,'Content-Type':'application/json','X-CSRF-Token':initialData.csrf},body:JSON.stringify(credentials)});assert.equal(login.status,200);
+  cookie=login.headers.get('set-cookie').split(';')[0];const data=await login.json();return {cookie,'Content-Type':'application/json','X-CSRF-Token':data.csrf};
+ }
+ const headers=await Promise.all([parallelSession(ADMIN),parallelSession({email:'unique-staff@example.test',password:'Staff-password-2026'})]);
+ const results=await Promise.all(headers.map((h,i)=>fetch(base+'/api/admin/products',{method:'POST',headers:h,body:JSON.stringify({...body,name:i?'TEN CUNG LUC':'Tên cùng lúc'})})));
+ assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);
+ assert.equal(app.db.prepare('SELECT name FROM products').all().filter(v=>normalizeText(v.name)==='ten cung luc').length,1);
 });

@@ -4,7 +4,7 @@ Ngày cập nhật kiểm tra: 22/11/2026 (Asia/Saigon).
 
 - Nguồn UI: `phucznghi/tmdt`, commit `229d3b47ee97605139ad0b43782914834d49291f`.
 - HTML/CSS trang chủ trước script ứng dụng được giữ nguyên; SHA-256: `510361fef355e6f6246110f72dd1c1d59e195df9429cefdb1d93024955152197`.
-- `npm.cmd test`: **38/38 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
+- `npm.cmd test`: **40/40 kiểm thử đạt** trên Node.js 24.17.0, gồm kho/nhập hàng, báo cáo, bill, nhận tại cửa hàng/phí theo tỉnh, phân quyền, tích điểm và migration database cũ.
 - Kiểm tra cú pháp các file JavaScript server/client thành công.
 - Đã thao tác trong trình duyệt trên database thử riêng: thêm vào giỏ từ UI gốc; đăng ký khách; khôi phục giỏ sau đăng ký; đặt COD; xem lịch sử đơn; đăng xuất/đăng nhập admin; xác nhận, chuẩn bị và chuyển đơn sang đang giao với mã vận đơn; sửa tồn kho biến thể; xem danh sách khách hàng.
 - Database dùng cho thao tác trình duyệt nằm trong thư mục làm việc tạm, không đưa vào mã nguồn bàn giao. Lần chạy mới không có tài khoản admin mặc định hay đơn kiểm thử.
@@ -37,3 +37,7 @@ Kiểm tra hai khu vực đăng nhập: customer/staff phải khớp vai trò c�
 Hoàn thiện chân trang: đã bấm đủ 8 liên kết trên trình duyệt, mở đúng nội dung size/tích điểm/tra cứu/FAQ/giao hàng/đổi trả/bảo hành/thông tin cá nhân, đóng mở hộp thoại và kiểm tra link tra cứu đến tài khoản. Thử email giả footer-ui-demo@example.test cho phản hồi lưu thành công và điều kiện WELCOME50 ngay dưới form. Kiểm thử API xác minh email hợp lệ được lưu một lần, gửi trùng không nhân bản và email sai bị từ chối.
 
 Danh mục UNIQLO: đã kiểm tra HTTP 200 và content-type image/jpeg của đủ 12 URL ảnh, xác nhận trên trình duyệt đủ 12 ảnh tải từ CDN UNIQLO. Bộ lọc trẻ em trả 4 mẫu; xem nhanh hiện tên, màu, giá tham khảo, mô tả tóm tắt và link sản phẩm nguồn. Size trẻ em hiển thị 110–160 theo chiều cao cm thay cho bảng cân nặng người lớn. Kiểm thử nhập danh mục xác minh chỉ ẩn đúng mẫu cũ, giữ tồn cũ/sản phẩm tự thêm, không nhân bản hoặc reset tồn khi chạy lại và giữ toàn vẹn khóa ngoại. Database đang dùng được sao lưu trước cập nhật; số tài khoản và đơn được giữ.
+
+Tìm kiếm không dấu/chống trùng: kiểm thử Unicode tổ hợp, đ/Đ, hoa thường, khoảng trắng, nhiều từ đảo thứ tự; POST/PUT từ admin/nhân viên bị từ chối tên trùng, kể cả hàng đã ngừng bán. Hai POST đồng thời trả một 201 và một 409. Sửa chính sản phẩm vẫn được, tên khác tạo mới bình thường. Trình duyệt đã tìm `ao khoac navy` ra hai áo, nhập `ao thun vai gan` báo đúng sản phẩm cũ/tồn 120 và mở danh sách tồn; trong phiếu nhập tìm không dấu, chọn biến thể M tồn 20, nhập 5 thấy dự kiến 25, không lưu phiếu trong kiểm tra này.
+
+Đã kiểm tra thêm bản index tĩnh qua HTTP độc lập: `ao khoac navy` vẫn trả 2 sản phẩm và nút đăng nhập vẫn mở đúng thông báo chưa kết nối backend.
