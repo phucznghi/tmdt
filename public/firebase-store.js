@@ -4,8 +4,9 @@ import {getFirestore,doc,collection,getDoc,getDocs,query,where,setDoc,updateDoc,
 import {normalizeText} from '/text.js';
 import {PROVINCES,selection,shippingFee,storeAddress} from '/firebase-shipping.js';
 import {reportWindow,buildReport} from '/firebase-reports.js';
+import {bankValid} from '/payments.js';
 const STATUS={pending:'Chờ xác nhận',confirmed:'Đã xác nhận',preparing:'Đang chuẩn bị',ready:'Chờ nhận tại cửa hàng',shipping:'Đang giao',delivered:'Đã giao',cancelled:'Đã hủy'};
-const next=o=>({pending:['confirmed','cancelled'],confirmed:['preparing','cancelled'],preparing:[o.fulfillment==='pickup'?'ready':'shipping','cancelled'],ready:['delivered','cancelled'],shipping:['delivered'],delivered:[],cancelled:[]}[o.status]||[]);
+const next=o=>({pending:['confirmed','cancelled'],confirmed:['preparing','cancelled'],preparing:[o.fulfillment==='pickup'?'ready':'shipping','cancelled'],ready:['delivered','cancelled'],shipping:['delivered'],delivered:[],cancelled:[]}[o.status]||[]).filter(status=>status==='cancelled'||o.method!=='bank_transfer'||o.payment_status==='paid');
 const iso=v=>v?.toDate?v.toDate().toISOString():v;
 const clean=v=>Array.isArray(v)?v.map(clean):v&&typeof v==='object'&&!v.toDate?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clean(x)])):iso(v);
 function fail(message,status=400){throw Object.assign(new Error(message),{status});}
@@ -26,7 +27,9 @@ export async function createStore(){
   return {...clean(u),loyaltyPoints:u.role==='customer'?(await list('loyalty_points',[['user_id','==',u.id]])).reduce((s,p)=>s+p.points,0):0};
  }
  async function requireRole(roles){const u=await me();if(!u)fail('Vui lòng đăng nhập.',401);if(!roles.includes(u.role))fail('Bạn không có quyền truy cập.',403);return u;}
- const config={bankDetails:'',paymentMethods:['cod'],statuses:STATUS,fulfillment:{provinces:PROVINCES,storeProvince:'TP.HCM',storeAddress:storeAddress(),outsideFee:30000}};
+ const paymentSetting=await one('settings','payments');
+ const bank=paymentSetting?.enabled&&bankValid(paymentSetting.bank)?paymentSetting.bank:null;
+ const config={bankDetails:bank?`${bank.bankName} · ${bank.accountNumber} · ${bank.displayName||bank.accountName}`:'',bank,paymentMethods:bank?['cod','bank_transfer']:['cod'],statuses:STATUS,fulfillment:{provinces:PROVINCES,storeProvince:'TP.HCM',storeAddress:storeAddress(),outsideFee:30000}};
  const cartKey=()=> 'mv-fb-cart-'+(auth.currentUser?.uid||'guest');
  const metaKey=()=> 'mv-fb-meta-'+(auth.currentUser?.uid||'guest');
  function saveCart(value){localStorage.setItem(cartKey(),JSON.stringify(value));}
@@ -50,13 +53,13 @@ export async function createStore(){
   const c=await cart();if(!c.items.length)fail('Giỏ hàng trống.');if(c.items.length>3)fail('Mỗi đơn tối đa 3 biến thể khác nhau trên bản Firebase Spark.');
   if(body.quote&&body.quote!==c.quote)fail('Giỏ hàng hoặc giá đã đổi. Xem lại tổng tiền.',409);
   const choice=selection(body),receiver=text(body.receiver,'Người nhận',2,100),phone=text(body.phone,'Số điện thoại',10,15).replace(/[\s.-]/g,'');if(!/^(0\d{9}|\+84\d{9})$/.test(phone))fail('Số điện thoại Việt Nam không hợp lệ.');
-  if(body.method!=='cod')fail('Bản hiện tại sử dụng COD.');
+  if(!config.paymentMethods.includes(body.method))fail('Phương thức thanh toán không khả dụng.');
   await runTransaction(db,async tx=>{
    const prior=await tx.get(orderRef);if(prior.exists())return;
    const snaps=await Promise.all(c.items.map(i=>tx.get(ref('variants',i.variant_id))));
    const items=snaps.map((s,i)=>{const v=s.data(),q=c.items[i].qty;if(!v?.active||v.stock<q)fail('Hàng không còn đủ tồn.');if(v.price!==c.items[i].price)fail('Giá đã thay đổi. Hãy tải lại giỏ.',409);return {variant_id:String(c.items[i].variant_id),product_id:v.product_id,name:v.name,color:v.color,size:v.size,img:v.img,price:v.price,qty:q};});
    const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0),shipping=shippingFee(choice),discount=c.promo==='WELCOME50'&&subtotal>=99000?50000:0;
-   tx.set(orderRef,{id,user_id:u.id,customer_email:u.email,request_key:key,receiver,phone,address:choice.fulfillment==='pickup'?storeAddress():text(body.address,'Địa chỉ',10,500),subtotal,shipping,discount,total:subtotal+shipping-discount,method:'cod',payment_status:'unpaid',status:'pending',carrier:'',tracking:'',...choice,store_address:storeAddress(),created_at:serverTimestamp(),items,history:[],payments:[],promo:c.promo});
+   tx.set(orderRef,{id,user_id:u.id,customer_email:u.email,request_key:key,receiver,phone,address:choice.fulfillment==='pickup'?storeAddress():text(body.address,'Địa chỉ',10,500),subtotal,shipping,discount,total:subtotal+shipping-discount,method:body.method,...(body.method==='bank_transfer'?{bank_snapshot:bank}:{}),payment_status:'unpaid',status:'pending',carrier:'',tracking:'',...choice,store_address:storeAddress(),created_at:serverTimestamp(),items,history:[],payments:[],promo:c.promo});
    items.forEach((it,i)=>tx.update(ref('variants',it.variant_id),{stock:snaps[i].data().stock-it.qty,last_order:id}));
   });saveCart([]);return serializeOrder(await one('orders',id));
  }
@@ -67,6 +70,7 @@ export async function createStore(){
    const point=status==='delivered'?await tx.get(ref('loyalty_points',id)):null;
    const change={status,history:[...o.history,{status,note:body.note||'',actor:u.id,created_at:new Date().toISOString()}]};
    if(status==='cancelled')change.cancelled_at=serverTimestamp();
+   if(status==='cancelled'&&o.payment_status==='paid')change.payment_status='refund_pending';
    if(status==='shipping'){change.carrier=text(body.carrier,'Hãng giao',1,100);change.tracking=text(body.tracking,'Mã vận đơn',1,150);}
    tx.update(r,change);if(status==='cancelled')o.items.forEach((it,i)=>tx.update(ref('variants',it.variant_id),{stock:stock[i].data().stock+it.qty,last_order:id}));
    if(status==='delivered'&&!point.exists())tx.set(ref('loyalty_points',id),{order_id:id,user_id:o.user_id,eligible_amount:o.subtotal-o.discount,points:Math.floor((o.subtotal-o.discount)/10000),created_at:serverTimestamp()});
@@ -132,7 +136,7 @@ export async function createStore(){
   m=route.match(/^\/admin\/orders\/([^/]+)\/invoice$/);if(m)return {order:await serializeOrder(await one('orders',m[1])),storeAddress:storeAddress()};
   m=route.match(/^\/admin\/orders\/([^/]+)\/status$/);if(m)return statusOrder(m[1],body.status,body);
   await requireRole(['admin']);
-  m=route.match(/^\/admin\/orders\/([^/]+)\/payment$/);if(m){await runTransaction(db,async tx=>{const r=ref('orders',m[1]),s=await tx.get(r),o=s.data();if(o.payment_status===body.status)return;if(body.status==='paid'&&(o.status!=='delivered'||o.payment_status!=='unpaid'))fail('Chưa đủ điều kiện ghi nhận tiền.');if(body.status==='refunded'&&o.payment_status!=='paid')fail('Chưa có tiền để hoàn.');tx.update(r,{payment_status:body.status,payments:[...o.payments,{status:body.status,reference:text(body.reference,'Biên nhận',3,150),actor:u.id,created_at:new Date().toISOString()}]});audit(tx,u.id,'payment.'+body.status,m[1]);});return serializeOrder(await one('orders',m[1]));}
+  m=route.match(/^\/admin\/orders\/([^/]+)\/payment$/);if(m){await runTransaction(db,async tx=>{const r=ref('orders',m[1]),s=await tx.get(r),o=s.data();if(o.payment_status===body.status)return;if(body.status==='paid'&&(o.payment_status!=='unpaid'||o.status==='cancelled'||(o.method==='cod'&&o.status!=='delivered')))fail('Chưa đủ điều kiện ghi nhận tiền.');if(body.status==='refunded'&&!(o.payment_status==='refund_pending'||(o.payment_status==='paid'&&o.status==='delivered')))fail('Chưa có tiền để hoàn.');tx.update(r,{payment_status:body.status,payments:[...o.payments,{status:body.status,reference:text(body.reference,'Biên nhận',3,150),actor:u.id,created_at:new Date().toISOString()}]});audit(tx,u.id,'payment.'+body.status,m[1]);});return serializeOrder(await one('orders',m[1]));}
   if(route==='/admin/users')return (await list('users')).map(clean);
   if(route==='/admin/customers'){const os=await orders(true);return (await list('users',[['role','==','customer']])).map(c=>({...clean(c),order_count:os.filter(o=>o.user_id===c.id).length,spent:os.filter(o=>o.user_id===c.id&&o.payment_status==='paid').reduce((s,o)=>s+o.total,0)}));}
   m=route.match(/^\/admin\/(users|customers)\/([^/]+)$/);if(m){if(m[2]===u.id)fail('Không tự đổi quyền/khóa tài khoản đang dùng.');const target=await one('users',m[2]);if(target.role==='admin')fail('Bản Spark bảo vệ tài khoản admin, không hạ quyền hoặc khóa admin tại đây.');await updateDoc(ref('users',m[2]),{role:m[1]==='users'?body.role:target.role,active:!!body.active,access_changed_at:serverTimestamp()});return {ok:true};}

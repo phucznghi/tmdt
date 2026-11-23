@@ -1,4 +1,6 @@
 import {firebaseMode,firebaseApi} from '/firebase-client.js';
+import {qrPaymentHtml} from '/payments.js';
+export {qrPaymentHtml};
 export const $ = id => document.getElementById(id);
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const money = n => new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n);
@@ -31,6 +33,7 @@ export function orderHtml(o,admin=false) {
  return `<div class="order-head"><div><strong>${esc(o.id)}</strong><p>${date(o.created_at)}</p></div><span class="badge ${o.status}">${esc(o.statusLabel)}</span></div>
  <div class="order-items">${o.items.map(i=>`<div class="order-item"><img src="${esc(i.img)}" alt=""><div><strong>${esc(i.name)}</strong><p>${esc(i.color)} · ${esc(i.size)} · SL ${i.qty}</p></div><b>${money(i.price*i.qty)}</b></div>`).join('')}</div>
  <div class="order-grid"><div><h4>${o.fulfillment==='pickup'?'Lấy tại cửa hàng':'Giao đến địa chỉ'}</h4><p>${esc(o.receiver)} · ${esc(o.phone)}</p><p>${esc(o.address)}${o.fulfillment!=='pickup'&&o.province?' · '+esc(o.province):''}</p>${admin?`<p>${esc(o.customer_email)}</p>`:''}</div><div><h4>Thanh toán</h4><p>${o.method==='cod'?'Thanh toán khi nhận hàng (COD)':'Chuyển khoản ngân hàng'}</p><p><span class="badge">${paymentLabels[o.payment_status]}</span></p><p>Tiền hàng ${money(o.subtotal)} · Phí giao ${money(o.shipping)} · Giảm ${money(o.discount)}</p><strong class="total">${money(o.total)}</strong></div></div>
+ ${!admin?qrPaymentHtml(o):o.method==='bank_transfer'&&o.payment_status==='unpaid'&&o.status!=='cancelled'?'<p class="notice">Đơn chuyển khoản trước đang chờ admin đối soát tiền. Chưa được xác nhận xử lý.</p>':''}
  ${o.pointsAwarded?`<p class="shipment">Đã tích <strong>+${o.earnedPoints} điểm</strong> cho đơn ${o.fulfillment==='pickup'?'đã nhận tại cửa hàng':'giao thành công'}.</p>`:''}
  ${o.carrier?`<p class="shipment">${esc(o.carrier)} · Mã vận đơn: <strong>${esc(o.tracking)}</strong></p>`:''}
  <details><summary>Lịch sử xử lý (${o.history.length})</summary><ol class="timeline">${o.history.map(h=>`<li><strong>${esc(o.fulfillment==='pickup'&&h.status==='delivered'?'Đã nhận tại cửa hàng':statusLabels[h.status])}</strong><p>${esc(h.note)}</p><small>${date(h.created_at)}</small></li>`).join('')}</ol>${o.payments.map(p=>`<p>${date(p.created_at)} · ${paymentLabels[p.status]} · ${esc(p.reference)}</p>`).join('')}</details>`;

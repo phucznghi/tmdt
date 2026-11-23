@@ -18,11 +18,13 @@ service cloud.firestore {
   }
   function amount(o,i){return o.items.size()>i?o.items[i].price*o.items[i].qty:0;}
   function uniqueItems(o){return (o.items.size()<2||o.items[0].variant_id!=o.items[1].variant_id) && (o.items.size()<3||(o.items[0].variant_id!=o.items[2].variant_id&&o.items[1].variant_id!=o.items[2].variant_id)) && (o.items.size()<4||(o.items[0].variant_id!=o.items[3].variant_id&&o.items[1].variant_id!=o.items[3].variant_id&&o.items[2].variant_id!=o.items[3].variant_id));}
+  function paymentValid(o){return (o.method=='cod'&&!('bank_snapshot' in o))||(o.method=='bank_transfer'&&get(/databases/$(database)/documents/settings/payments).data.enabled==true&&o.bank_snapshot==get(/databases/$(database)/documents/settings/payments).data.bank);}
+  function paymentOnStatus(o,n){return n.payment_status==(n.status=='cancelled'&&o.payment_status=='paid'?'refund_pending':o.payment_status);}
   function orderValid(o,id){
-   return customer() && o.keys().hasOnly(['id','user_id','customer_email','request_key','receiver','phone','address','subtotal','shipping','discount','total','method','payment_status','status','carrier','tracking','fulfillment','province','store_address','created_at','items','history','payments','promo']) &&
+   return customer() && o.keys().hasOnly(['id','user_id','customer_email','request_key','receiver','phone','address','subtotal','shipping','discount','total','method','payment_status','status','carrier','tracking','fulfillment','province','store_address','created_at','items','history','payments','promo','bank_snapshot']) &&
     o.id==id && o.user_id==request.auth.uid && o.customer_email==request.auth.token.email && o.request_key is string && o.request_key.size()>=16 &&
     o.receiver is string && o.receiver.size()>=2 && o.receiver.size()<=100 && o.phone is string && o.phone.matches('^(0[0-9]{9}|[+]84[0-9]{9})$') &&
-    o.address is string && o.address.size()>=10 && o.address.size()<=500 && o.method=='cod' && o.payment_status=='unpaid' && o.status=='pending' && o.carrier=='' && o.tracking=='' && o.history==[] && o.payments==[] && o.created_at==request.time &&
+    o.address is string && o.address.size()>=10 && o.address.size()<=500 && paymentValid(o) && o.payment_status=='unpaid' && o.status=='pending' && o.carrier=='' && o.tracking=='' && o.history==[] && o.payments==[] && o.created_at==request.time &&
     o.fulfillment in ['pickup','delivery'] && o.store_address=='970 Quang Trung, TP.HCM' && o.province in ['TP.HCM','Hà Nội','Hải Phòng','Đà Nẵng','Huế','Cần Thơ','Cao Bằng','Điện Biên','Lai Châu','Sơn La','Lạng Sơn','Quảng Ninh','Thanh Hóa','Nghệ An','Hà Tĩnh','Tuyên Quang','Lào Cai','Thái Nguyên','Phú Thọ','Bắc Ninh','Hưng Yên','Ninh Bình','Quảng Trị','Quảng Ngãi','Gia Lai','Khánh Hòa','Lâm Đồng','Đắk Lắk','Đồng Nai','Tây Ninh','Vĩnh Long','Đồng Tháp','An Giang','Cà Mau'] &&
     (o.fulfillment!='pickup'||(o.province=='TP.HCM'&&o.address==o.store_address)) &&
     o.items is list && o.items.size()>=1 && o.items.size()<=3 && uniqueItems(o) && lineValid(o,0) && (o.items.size()<2||lineValid(o,1)) && (o.items.size()<3||lineValid(o,2)) && (o.items.size()<4||lineValid(o,3)) &&
@@ -37,7 +39,7 @@ service cloud.firestore {
     ((next.created_at==request.time && next.status=='pending' && orderItemQty(next,id)>0 && request.resource.data.stock==resource.data.stock-orderItemQty(next,id)) ||
      (next.cancelled_at==request.time && next.status=='cancelled' && orderItemQty(next,id)>0 && request.resource.data.stock==resource.data.stock+orderItemQty(next,id)));
   }
-  function nextStatus(o,n){return (o.status=='pending'&&n in ['confirmed','cancelled'])||(o.status=='confirmed'&&n in ['preparing','cancelled'])||(o.status=='preparing'&&n in [o.fulfillment=='pickup'?'ready':'shipping','cancelled'])||(o.status=='ready'&&n in ['delivered','cancelled'])||(o.status=='shipping'&&n=='delivered');}
+  function nextStatus(o,n){return (n=='cancelled'||o.method!='bank_transfer'||o.payment_status=='paid')&&((o.status=='pending'&&n in ['confirmed','cancelled'])||(o.status=='confirmed'&&n in ['preparing','cancelled'])||(o.status=='preparing'&&n in [o.fulfillment=='pickup'?'ready':'shipping','cancelled'])||(o.status=='ready'&&n in ['delivered','cancelled'])||(o.status=='shipping'&&n=='delivered'));}
   function returnedLine(o,i){let a=o.items[i];return getAfter(/databases/$(database)/documents/variants/$(a.variant_id)).data.stock==get(/databases/$(database)/documents/variants/$(a.variant_id)).data.stock+a.qty && getAfter(/databases/$(database)/documents/variants/$(a.variant_id)).data.last_order==o.id;}
   function returnedStock(o){return returnedLine(o,0)&&(o.items.size()<2||returnedLine(o,1))&&(o.items.size()<3||returnedLine(o,2))&&(o.items.size()<4||returnedLine(o,3));}
   function deliveredPoints(o){let p=getAfter(/databases/$(database)/documents/loyalty_points/$(o.id)).data;return p.user_id==o.user_id&&p.order_id==o.id&&p.points==int((o.subtotal-o.discount) / 10000);}
@@ -64,9 +66,9 @@ service cloud.firestore {
    allow get: if internal()||(active()&&(!exists(/databases/$(database)/documents/orders/$(id))||resource.data.user_id==request.auth.uid));
    allow list: if internal()||(active()&&resource.data.user_id==request.auth.uid);
    allow create: if orderValid(request.resource.data,id);
-   allow update: if (customer()&&resource.data.user_id==request.auth.uid&&resource.data.status=='pending'&&request.resource.data.status=='cancelled'&&changedOnly(['status','history','cancelled_at'])&&request.resource.data.cancelled_at==request.time&&returnedStock(resource.data)) ||
-     (internal()&&nextStatus(resource.data,request.resource.data.status)&&changedOnly(['status','history','carrier','tracking','cancelled_at']) && (request.resource.data.status!='shipping'||(request.resource.data.carrier.size()>0&&request.resource.data.tracking.size()>0)) && (request.resource.data.status!='cancelled'||(request.resource.data.cancelled_at==request.time&&returnedStock(resource.data))) && (request.resource.data.status!='delivered'||deliveredPoints(resource.data))) ||
-     (admin()&&changedOnly(['payment_status','payments'])&&((resource.data.payment_status=='unpaid'&&request.resource.data.payment_status=='paid'&&resource.data.status=='delivered')||(resource.data.payment_status=='paid'&&request.resource.data.payment_status=='refunded')));
+   allow update: if (customer()&&resource.data.user_id==request.auth.uid&&resource.data.status=='pending'&&request.resource.data.status=='cancelled'&&changedOnly(['status','history','cancelled_at','payment_status'])&&paymentOnStatus(resource.data,request.resource.data)&&request.resource.data.cancelled_at==request.time&&returnedStock(resource.data)) ||
+     (internal()&&nextStatus(resource.data,request.resource.data.status)&&changedOnly(['status','history','carrier','tracking','cancelled_at','payment_status'])&&paymentOnStatus(resource.data,request.resource.data) && (request.resource.data.status!='shipping'||(request.resource.data.carrier.size()>0&&request.resource.data.tracking.size()>0)) && (request.resource.data.status!='cancelled'||(request.resource.data.cancelled_at==request.time&&returnedStock(resource.data))) && (request.resource.data.status!='delivered'||deliveredPoints(resource.data))) ||
+     (admin()&&changedOnly(['payment_status','payments'])&&((resource.data.payment_status=='unpaid'&&request.resource.data.payment_status=='paid'&&resource.data.status!='cancelled'&&(resource.data.method=='bank_transfer'||resource.data.status=='delivered'))||((resource.data.payment_status=='refund_pending'||(resource.data.payment_status=='paid'&&resource.data.status=='delivered'))&&request.resource.data.payment_status=='refunded')));
   }
   match /loyalty_points/{id} {
    allow get: if internal()||(active()&&(!exists(/databases/$(database)/documents/loyalty_points/$(id))||resource.data.user_id==request.auth.uid));
@@ -77,6 +79,7 @@ service cloud.firestore {
   match /stock_movements/{id} {allow read: if admin();allow create: if internal();}
   match /audit/{id} {allow read: if admin();allow create: if internal()&&request.resource.data.actor==request.auth.uid;}
   match /subscribers/{id} {allow create: if request.resource.data.keys().hasOnly(['email','created_at'])&&request.resource.data.email==id&&id.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$');}
+  match /settings/payments {allow get: if true;}
  }
 }
 

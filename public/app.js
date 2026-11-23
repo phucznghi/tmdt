@@ -1,5 +1,5 @@
 import {matchesSearch} from '/text.js';
-import {api,esc,busy,redirectForLogin} from '/shared.js';
+import {api,esc,busy,redirectForLogin,qrPaymentHtml} from '/shared.js';
 import {mountFulfillment} from '/checkout.js';
 
         // Safe SVG Data URI Fallback Image so NO broken images ever appear
@@ -614,6 +614,11 @@ import {mountFulfillment} from '/checkout.js';
             let serverCart;
             const fulfillmentContainer=document.createElement('div');checkoutForm.insertBefore(fulfillmentContainer,document.getElementById('checkout-address'));
             const fulfillmentUI=mountFulfillment(fulfillmentContainer,me.config.fulfillment,document.getElementById('checkout-address'),async choice=>{acceptCart(await api('/cart/fulfillment','POST',choice));},e=>showToast(e.message));
+            const paymentFields=document.createElement('div');paymentFields.style.cssText='display:grid;gap:8px;margin:12px 0';
+            paymentFields.innerHTML='<label style="display:grid;gap:6px;font-weight:600">Phương thức thanh toán<select id="checkout-payment-method" style="padding:10px;border:1px solid #bdccbf;border-radius:8px"><option value="cod">Thanh toán khi nhận hàng (COD)</option>'+(me.config.paymentMethods.includes('bank_transfer')?'<option value="bank_transfer">Chuyển khoản trước bằng QR</option>':'')+'</select></label><p id="checkout-payment-note" hidden style="font-size:14px;color:#53675a">Sau khi lưu đơn, mã QR điền sẵn số tiền và mã đơn sẽ hiển thị. Cửa hàng xử lý sau khi admin đối soát tiền.</p>';
+            checkoutForm.insertBefore(paymentFields,document.getElementById('checkout-address'));
+            const paymentMethod=paymentFields.querySelector('select');paymentMethod.onchange=()=>{paymentFields.querySelector('p').hidden=paymentMethod.value!=='bank_transfer';};
+            const qrResult=document.createElement('div');qrResult.id='order-payment-qr';qrResult.style.textAlign='left';orderSuccessView.insertBefore(qrResult,document.getElementById('new-shopping-btn'));
             function acceptCart(c) {
                 serverCart=c;
                 fulfillmentUI.set(c);
@@ -732,13 +737,15 @@ import {mountFulfillment} from '/checkout.js';
                     await cartQueue;
                     await fulfillmentUI.wait();
                     sessionStorage.setItem('mv-checkout-key',checkoutKey);
-                    const o=await api('/orders','POST',{requestKey:checkoutKey,quote:serverCart.quote,...fulfillmentUI.read(),receiver:document.getElementById('checkout-name').value,phone:document.getElementById('checkout-phone').value,address:document.getElementById('checkout-address').value,method:'cod'});
+                    const o=await api('/orders','POST',{requestKey:checkoutKey,quote:serverCart.quote,...fulfillmentUI.read(),receiver:document.getElementById('checkout-name').value,phone:document.getElementById('checkout-phone').value,address:document.getElementById('checkout-address').value,method:paymentMethod.value});
                     sessionStorage.removeItem('mv-checkout-key');checkoutKey=crypto.randomUUID();
                     acceptCart(await api('/cart'));state.orders=await api('/orders');updateAccountUI();
                     document.getElementById('empty-cart-view').classList.add('hidden');
                     checkoutForm.classList.add('hidden');
-                    document.getElementById('order-success-code').textContent='Mã đơn hàng: #'+o.id+' · Thanh toán khi nhận hàng (COD)';
-                    orderSuccessView.classList.remove('hidden');showToast('Đơn hàng đã được lưu.');
+                    document.getElementById('order-success-code').textContent='Mã đơn hàng: #'+o.id+(o.method==='bank_transfer'?' · Chờ chuyển khoản / đối soát':' · Thanh toán khi nhận hàng (COD)');
+                    qrResult.innerHTML=qrPaymentHtml(o)||(o.method==='bank_transfer'?'<p>'+esc(me.config.bankDetails)+' · Nội dung: '+esc(o.id)+'</p>':'');
+                    orderSuccessView.querySelector('h4').textContent=o.method==='bank_transfer'?'Đã lưu đơn – chờ chuyển khoản':'Đặt Hàng Thành Công!';
+                    orderSuccessView.classList.remove('hidden');orderSuccessView.scrollIntoView({block:'start',behavior:'smooth'});showToast('Đơn hàng đã được lưu.');
                 },async e=>{if(await redirectForLogin(e,'/account?checkout=1'))return;showToast(e.message);try{acceptCart(await api('/cart'));}catch{}});
             });
             // Global ESC & Outside Click Cleanup

@@ -1,3 +1,5 @@
+> Cập nhật 24/11/2026: Firebase có COD và chuyển khoản trước bằng QR. Sau khi lưu đơn, QR hiển thị tổng tiền và mã đơn; admin đối soát để ghi nhận paid. Nhân viên chưa xử lý đơn QR khi chưa nhận tiền. Xem FIREBASE-DEPLOYMENT.md.
+
 > Bản online mới dùng Firebase Spark tại https://store-clothes-tmdt.web.app/. Xem [FIREBASE-DEPLOYMENT.md](FIREBASE-DEPLOYMENT.md) cho kiến trúc, phân quyền và vận hành Firebase. Các mô tả Node.js, SQL, cookie, CSRF, healthcheck và backup SQLite bên dưới áp dụng cho bản cục bộ. Các đường dẫn API được bộ điều hợp Firebase ánh xạ sang SDK trong trình duyệt, không phải endpoint HTTP trên Hosting.
 
 # Mộc Vải — phần 5, 6, 7
